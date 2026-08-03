@@ -1,0 +1,518 @@
+.LineupTeamGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+}
+
+.LineupTeamCard {
+  display: flex;
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.LineupTeamCard-logo {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 12px;
+  object-fit: contain;
+}
+
+.LineupTeamCard strong {
+  font-size: 16px;
+}
+
+.LineupTeamCard span {
+  margin-top: 4px;
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+@media (max-width: 767px) {
+  .LineupTeamGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .LineupTeamCard {
+    min-height: 135px;
+    padding: 12px;
+  }
+
+  .LineupTeamCard-logo {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+.LineupTeamCard {
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.LineupTeamCard:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.LineupTeamCard.is-selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.LineupSquad {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--control-bg);
+}
+
+.LineupSquad-header {
+  margin-bottom: 20px;
+}
+
+.LineupSquad-header h3 {
+  margin-bottom: 6px;
+}
+
+.LineupSquad-header p {
+  margin: 0;
+  color: var(--muted-color);
+}
+
+.LineupPlayerList {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.LineupPlayer {
+  display: flex;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  align-items: center;
+}
+
+.LineupPlayer-photo {
+  width: 54px;
+  height: 54px;
+  margin-right: 12px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.LineupPlayer-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.LineupPlayer-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LineupPlayer-info span {
+  margin-top: 3px;
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+@media (max-width: 767px) {
+  .LineupSquad {
+    margin-top: 28px;
+    padding-top: 22px;
+  }
+
+  .LineupPlayerList {
+    grid-template-columns: 1fr;
+  }
+}
+
+.LineupSquad-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.LineupSquad-counter {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: var(--border-radius);
+  background: var(--control-bg);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+button.LineupPlayer {
+  position: relative;
+  width: 100%;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+button.LineupPlayer:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+button.LineupPlayer.is-selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+button.LineupPlayer:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.LineupPlayer-check {
+  display: flex;
+  width: 26px;
+  height: 26px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: var(--body-bg);
+  align-items: center;
+  flex: 0 0 auto;
+  font-weight: bold;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .LineupSquad-header {
+    flex-direction: column;
+  }
+
+  .LineupSquad-counter {
+    align-self: flex-start;
+  }
+}
+
+.LineupPitch {
+  max-width: 760px;
+  margin: 36px auto 0;
+  overflow: hidden;
+  border: 1px solid var(--control-bg);
+  border-radius: 12px;
+  background: var(--body-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.LineupPitch-header {
+  display: flex;
+  min-height: 66px;
+  padding: 12px 18px;
+  background: var(--control-bg);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.LineupPitch-team {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.LineupPitch-team img {
+  width: 42px;
+  height: 42px;
+  margin-right: 12px;
+  object-fit: contain;
+}
+
+.LineupPitch-team strong {
+  overflow: hidden;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LineupPitch-header > span {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.LineupPitch-field {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  min-height: 720px;
+  overflow: hidden;
+  border: 4px solid #eff8ec;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.035) 0,
+      rgba(255, 255, 255, 0.035) 10%,
+      rgba(0, 0, 0, 0.025) 10%,
+      rgba(0, 0, 0, 0.025) 20%
+    ),
+    linear-gradient(
+      180deg,
+      #388e3c,
+      #237a32
+    );
+}
+
+.LineupPitch-halfwayLine {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.LineupPitch-centerCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 132px;
+  height: 132px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.LineupPitch-centerCircle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.LineupPitch-penaltyArea,
+.LineupPitch-goalArea {
+  position: absolute;
+  left: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transform: translateX(-50%);
+}
+
+.LineupPitch-penaltyArea {
+  width: 62%;
+  height: 17%;
+}
+
+.LineupPitch-goalArea {
+  width: 30%;
+  height: 7%;
+}
+
+.LineupPitch-penaltyArea--top,
+.LineupPitch-goalArea--top {
+  top: -2px;
+  border-top: 0;
+}
+
+.LineupPitch-penaltyArea--bottom,
+.LineupPitch-goalArea--bottom {
+  bottom: -2px;
+  border-bottom: 0;
+}
+
+.LineupPitch-player {
+  position: absolute;
+  display: flex;
+  width: 112px;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.LineupPitch-playerPhoto {
+  display: flex;
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #1c5325;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.38);
+  align-items: center;
+  justify-content: center;
+}
+
+.LineupPitch-playerPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.LineupPitch-playerPhoto span {
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.LineupPitch-player > strong {
+  max-width: 112px;
+  margin-top: 5px;
+  padding: 3px 7px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.LineupPitch-player > span {
+  margin-top: 2px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px #000;
+}
+
+@media (max-width: 767px) {
+  .LineupPitch {
+    margin-top: 28px;
+  }
+
+  .LineupPitch-header {
+    padding: 10px 12px;
+  }
+
+  .LineupPitch-team img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .LineupPitch-field {
+    min-height: 600px;
+  }
+
+  .LineupPitch-player {
+    width: 82px;
+  }
+
+  .LineupPitch-playerPhoto {
+    width: 48px;
+    height: 48px;
+  }
+
+  .LineupPitch-player > strong {
+    max-width: 82px;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  .LineupPitch-centerCircle {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+.LineupPitch-formationSelect {
+  min-width: 110px;
+  height: 36px;
+  padding: 6px 30px 6px 10px;
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+button.LineupPitch-player {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+button.LineupPitch-player:hover .LineupPitch-playerPhoto {
+  border-color: #ffeb3b;
+  transform: scale(1.06);
+}
+
+button.LineupPitch-player.is-selected
+  .LineupPitch-playerPhoto {
+  border-color: #ffeb3b;
+  box-shadow:
+    0 0 0 5px rgba(255, 235, 59, 0.55),
+    0 3px 9px rgba(0, 0, 0, 0.38);
+  transform: scale(1.08);
+}
+
+button.LineupPitch-player.is-selected::after {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ffeb3b;
+  color: #222;
+  content: "1";
+  font-size: 11px;
+  font-weight: bold;
+  transform: translateX(-50%);
+}
+
+.LineupPitch-playerPhoto {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+button.LineupPitch-player:focus {
+  outline: none;
+}
+
+button.LineupPitch-player:focus-visible
+  .LineupPitch-playerPhoto {
+  outline: 3px solid #ffeb3b;
+  outline-offset: 3px;
+}
+
+.LineupBuilder-actions {
+  display: flex;
+  margin-top: 24px;
+  justify-content: center;
+}
+

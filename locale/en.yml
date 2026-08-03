@@ -1,0 +1,71 @@
+m4v3rick4git-lineup:
+  admin:
+    permissions:
+      create_lineup_label: Create team lineups
+
+    settings:
+      league_id_label: API-Football league ID
+      league_id_help: Numeric identifier of the Austrian Bundesliga in API-Football.
+      season_label: Season
+      season_help: Starting year of the season used by API-Football.
+
+    api_key:
+      title: API-Football API key
+      help: The API key is handled server-side and is never returned to the browser.
+      status_configured: API key configured
+      status_missing: No API key configured
+      status_error: The API-key status could not be loaded.
+      source_database: An encrypted API key is stored in the database.
+      source_none: No API-key source is available.
+      input_placeholder: Enter a new API key
+      save_button: Save API key
+      saving_button: Saving...
+      saved_message: The API key was encrypted and saved.
+      save_error: The API key could not be saved.
+      delete_button: Delete stored API key
+      deleting_button: Deleting...
+      delete_confirm: Delete the encrypted API key stored in the database?
+      deleted_message: The stored API key was deleted.
+      delete_error: The stored API key could not be deleted.
+      test_button: Test connection
+      testing_button: Testing...
+      test_success: "Connection successful. Plan: {plan}; requests today: {current} of {limit}."
+      test_error: The API-Football connection test failed.
+
+    team_sync:
+      title: Team synchronization
+      help: Save the league ID and season settings before starting the synchronization.
+      sync_button: Synchronize teams
+      syncing_button: Synchronizing...
+      success_message: "Synchronization completed. Received: {received}; created: {created}; updated: {updated}; deactivated: {deactivated}."
+      error_message: Team synchronization failed. Check the API key, league ID and season.
+
+    squad_sync:
+      title: Squad synchronization
+      help: Retrieves the current squads for all active teams from API-Football.
+      sync_button: Synchronize squads
+      syncing_button: Synchronizing squads...
+      progress_message: "Team {completed} of {total}: {team}"
+      success_message: "Squad synchronization completed. Teams: {teams}; received: {received}; created: {created}; updated: {updated}; deactivated: {deactivated}."
+      error_message: Squad synchronization failed. Details are available in the Flarum log.
+
+  forum:
+    composer:
+      button_tooltip: Insert team lineup
+      image_alt: Team lineup
+
+    composer_modal:
+      title: Create team lineup
+
+    lineup:
+      title: Team lineup
+      description: Select a team to view its squad and create a lineup.
+      load_error: The teams could not be loaded.
+      no_teams: No active teams are currently available.
+      squad_description: Select players from the squad for your lineup.
+      players_error: The squad could not be loaded.
+      no_players: No active players are currently available for this team.
+      selection_count: "{selected} of {maximum} players selected"
+      generate_button: Create lineup image
+      generating_button: Creating image...
+      generation_error: The lineup image could not be created.

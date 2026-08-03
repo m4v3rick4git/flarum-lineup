@@ -1,0 +1,71 @@
+m4v3rick4git-lineup:
+  admin:
+    permissions:
+      create_lineup_label: Mannschaftsaufstellungen erstellen
+
+    settings:
+      league_id_label: API-Football-Liga-ID
+      league_id_help: Numerische Kennung der österreichischen Bundesliga bei API-Football.
+      season_label: Saison
+      season_help: Startjahr der Saison, das an API-Football übergeben wird.
+
+    api_key:
+      title: API-Football-API-Key
+      help: Der API-Key wird ausschließlich serverseitig verarbeitet und niemals an den Browser zurückgegeben.
+      status_configured: API-Key konfiguriert
+      status_missing: Kein API-Key konfiguriert
+      status_error: Der API-Key-Status konnte nicht geladen werden.
+      source_database: Ein verschlüsselter API-Key ist in der Datenbank gespeichert.
+      source_none: Es ist keine API-Key-Quelle verfügbar.
+      input_placeholder: Neuen API-Key eingeben
+      save_button: API-Key speichern
+      saving_button: Wird gespeichert...
+      saved_message: Der API-Key wurde verschlüsselt gespeichert.
+      save_error: Der API-Key konnte nicht gespeichert werden.
+      delete_button: Gespeicherten API-Key löschen
+      deleting_button: Wird gelöscht...
+      delete_confirm: Den verschlüsselt in der Datenbank gespeicherten API-Key löschen?
+      deleted_message: Der gespeicherte API-Key wurde gelöscht.
+      delete_error: Der gespeicherte API-Key konnte nicht gelöscht werden.
+      test_button: Verbindung testen
+      testing_button: Verbindung wird getestet...
+      test_success: "Verbindung erfolgreich. Plan: {plan}; heutige Anfragen: {current} von {limit}."
+      test_error: Der Verbindungstest mit API-Football ist fehlgeschlagen.
+
+    team_sync:
+      title: Vereinssynchronisierung
+      help: Liga-ID und Saison müssen vor der Synchronisierung über „Save Changes“ gespeichert werden.
+      sync_button: Vereine synchronisieren
+      syncing_button: Vereine werden synchronisiert...
+      success_message: "Synchronisierung abgeschlossen. Empfangen: {received}; neu: {created}; aktualisiert: {updated}; deaktiviert: {deactivated}."
+      error_message: Die Vereinssynchronisierung ist fehlgeschlagen. API-Key, Liga-ID und Saison prüfen.
+
+    squad_sync:
+      title: Kadersynchronisierung
+      help: Ruft die aktuellen Kader aller aktiven Vereine bei API-Football ab.
+      sync_button: Kader synchronisieren
+      syncing_button: Kader werden synchronisiert...
+      progress_message: "Verein {completed} von {total}: {team}"
+      success_message: "Kadersynchronisierung abgeschlossen. Vereine: {teams}; empfangen: {received}; neu: {created}; aktualisiert: {updated}; deaktiviert: {deactivated}."
+      error_message: Die Kadersynchronisierung ist fehlgeschlagen. Details stehen im Flarum-Log.
+
+  forum:
+    composer:
+      button_tooltip: Mannschaftsaufstellung einfügen
+      image_alt: Mannschaftsaufstellung
+
+    composer_modal:
+      title: Mannschaftsaufstellung erstellen
+
+    lineup:
+      title: Mannschaftsaufstellung
+      description: Wähle einen Verein, um dessen Kader anzuzeigen und eine Aufstellung zu erstellen.
+      load_error: Die Vereine konnten nicht geladen werden.
+      no_teams: Es sind derzeit keine aktiven Vereine verfügbar.
+      squad_description: Wähle Spieler aus dem Kader für deine Aufstellung.
+      players_error: Der Kader konnte nicht geladen werden.
+      no_players: Für diesen Verein sind derzeit keine aktiven Spieler verfügbar.
+      selection_count: "{selected} von {maximum} Spielern ausgewählt"
+      generate_button: Aufstellung als Bild erstellen
+      generating_button: Bild wird erstellt...
+      generation_error: Das Aufstellungsbild konnte nicht erstellt werden.
