@@ -13,6 +13,7 @@ use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
+use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 use Wss\FlarumLineup\Security\ApiKeyCipher;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
@@ -61,6 +62,7 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     'connect_timeout' => 5.0,
                     'timeout' => 10.0,
                     'http_errors' => false,
+                    'allow_redirects' => false,
                     'headers' => [
                         'Accept' => 'application/json',
                     ],
@@ -83,6 +85,21 @@ final class LineupServiceProvider extends AbstractServiceProvider
         );
 
         $this->container->singleton(
+            RemoteImageFetcher::class,
+            static function (
+                Container $container
+            ): RemoteImageFetcher {
+                return new RemoteImageFetcher(
+                    new Client([
+                        'connect_timeout' => 3.0,
+                        'timeout' => 5.0,
+                        'http_errors' => false,
+                        'allow_redirects' => false,
+                    ])
+                );
+            }
+        );
+        $this->container->singleton(
             LineupImageRenderer::class,
             static function (
                 Container $container
@@ -90,6 +107,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
                 return new LineupImageRenderer(
                     $container->make(
                         FormationCatalog::class
+                    ),
+                    $container->make(
+                        RemoteImageFetcher::class
                     )
                 );
             }
