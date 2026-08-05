@@ -20,12 +20,17 @@ final class SquadSynchronizer
 
     private ConnectionInterface $database;
 
+    private SyncSafetyGuard $syncSafetyGuard;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
-        ConnectionInterface $database
+        ConnectionInterface $database,
+        ?SyncSafetyGuard $syncSafetyGuard = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->database = $database;
+        $this->syncSafetyGuard = $syncSafetyGuard
+            ?? new SyncSafetyGuard();
     }
 
     /**
@@ -97,14 +102,17 @@ final class SquadSynchronizer
             (int) $team->api_team_id
         );
 
-        if ($players === []) {
-            throw new RuntimeException(
-                sprintf(
-                    'API-Football returned an empty squad for team %d.',
-                    $team->api_team_id
-                )
+        $existingActivePlayers = (int) Player::query()
+            ->where('team_id', $team->id)
+            ->where('provider', self::PROVIDER)
+            ->where('is_active', true)
+            ->count();
+
+        $this->syncSafetyGuard
+            ->assertSquadResponseIsComplete(
+                count($players),
+                $existingActivePlayers
             );
-        }
 
         $now = Carbon::now();
 

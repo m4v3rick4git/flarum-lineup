@@ -26,14 +26,19 @@ final class TeamSynchronizer
 
     private ConnectionInterface $database;
 
+    private SyncSafetyGuard $syncSafetyGuard;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
         SettingsRepositoryInterface $settings,
-        ConnectionInterface $database
+        ConnectionInterface $database,
+        ?SyncSafetyGuard $syncSafetyGuard = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->settings = $settings;
         $this->database = $database;
+        $this->syncSafetyGuard = $syncSafetyGuard
+            ?? new SyncSafetyGuard();
     }
 
     /**
@@ -69,11 +74,15 @@ final class TeamSynchronizer
             $season
         );
 
-        if ($teams === []) {
-            throw new RuntimeException(
-                'API-Football returned an empty team list.'
+        $existingActiveTeams = (int) Team::query()
+            ->where('is_active', true)
+            ->count();
+
+        $this->syncSafetyGuard
+            ->assertTeamResponseIsComplete(
+                count($teams),
+                $existingActiveTeams
             );
-        }
 
         $now = Carbon::now();
 
