@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\Api\Controller;
 
-use Flarum\Foundation\Paths;
 use Flarum\Http\RequestUtil;
 use Flarum\Http\UrlGenerator;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -13,6 +12,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Wss\FlarumLineup\Image\GeneratedImageManager;
+use Wss\FlarumLineup\Image\ImageGenerationThrottledException;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 use Wss\FlarumLineup\Model\Player;
@@ -25,7 +26,7 @@ final class CreateLineupImageController implements
 
     private FormationCatalog $formationCatalog;
 
-    private Paths $paths;
+    private GeneratedImageManager $generatedImageManager;
 
     private UrlGenerator $urlGenerator;
 
@@ -34,13 +35,13 @@ final class CreateLineupImageController implements
     public function __construct(
         LineupImageRenderer $renderer,
         FormationCatalog $formationCatalog,
-        Paths $paths,
+        GeneratedImageManager $generatedImageManager,
         UrlGenerator $urlGenerator,
         LoggerInterface $logger
     ) {
         $this->renderer = $renderer;
         $this->formationCatalog = $formationCatalog;
-        $this->paths = $paths;
+        $this->generatedImageManager = $generatedImageManager;
         $this->urlGenerator = $urlGenerator;
         $this->logger = $logger;
     }
@@ -200,29 +201,28 @@ final class CreateLineupImageController implements
             ];
         }
 
-        $filename = bin2hex(
-            random_bytes(20)
-        ).'.png';
-
-        $relativePath =
-            'assets/wss-lineup/'.$filename;
-
-        $outputPath =
-            $this->paths->public.'/'.$relativePath;
-
         try {
-            $this->renderer->render(
-                $outputPath,
-                (string) $team->name,
-                $team->logo_url,
-                $formation,
-                $players
+            $image = $this->generatedImageManager->generate(
+                (int) $actor->id,
+                function (string $outputPath) use (
+                    $team,
+                    $formation,
+                    $players
+                ): void {
+                    $this->renderer->render(
+                        $outputPath,
+                        (string) $team->name,
+                        $team->logo_url,
+                        $formation,
+                        $players
+                    );
+                }
             );
+        } catch (
+            ImageGenerationThrottledException $exception
+        ) {
+            return $this->throttledResponse($exception);
         } catch (Throwable $exception) {
-            if (is_file($outputPath)) {
-                @unlink($outputPath);
-            }
-
             $this->logger->error(
                 'WSS Lineup image generation failed.',
                 [
@@ -244,9 +244,39 @@ final class CreateLineupImageController implements
             'success' => true,
             'url' => $this->urlGenerator
                 ->to('forum')
-                ->path($relativePath),
-            'filename' => $filename,
+                ->path($image->relative_path),
+            'filename' => $image->filename,
         ]);
+    }
+
+    private function throttledResponse(
+        ImageGenerationThrottledException $exception
+    ): JsonResponse {
+        return new JsonResponse(
+            [
+                'errors' => [
+                    [
+                        'status' => '429',
+                        'code' => 'image_generation_throttled',
+                        'detail' => $exception->getMessage(),
+                        'meta' => [
+                            'reason' => $exception->reason(),
+                            'retryAfter' => (
+                                $exception->retryAfterSeconds()
+                            ),
+                        ],
+                    ],
+                ],
+            ],
+            429,
+            [
+                'Content-Type' =>
+                    'application/vnd.api+json',
+                'Retry-After' => (
+                    (string) $exception->retryAfterSeconds()
+                ),
+            ]
+        );
     }
 
     private function validationError(

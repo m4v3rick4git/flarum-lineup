@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wss\FlarumLineup\Provider;
 
 use Flarum\Foundation\AbstractServiceProvider;
+use Flarum\Foundation\Paths;
 use Flarum\Settings\SettingsRepositoryInterface;
 use GuzzleHttp\Client;
 use Illuminate\Contracts\Container\Container;
@@ -13,6 +14,11 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
+use Wss\FlarumLineup\Image\GeneratedImageClaimManager;
+use Wss\FlarumLineup\Image\GeneratedImageClaimService;
+use Wss\FlarumLineup\Image\GeneratedImageManager;
+use Wss\FlarumLineup\Image\GeneratedImageReferenceExtractor;
+use Wss\FlarumLineup\Image\ImageGenerationLockManager;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
 use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
@@ -113,6 +119,72 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     ),
                     $container->make(
                         RemoteImageFetcher::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageReferenceExtractor::class,
+            static function (
+                Container $container
+            ): GeneratedImageReferenceExtractor {
+                return new GeneratedImageReferenceExtractor();
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageClaimManager::class,
+            function (
+                Container $container
+            ): GeneratedImageClaimManager {
+                return new GeneratedImageClaimManager(
+                    $container->make(
+                        GeneratedImageReferenceExtractor::class
+                    ),
+                    $container->make(
+                        ConnectionInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageClaimService::class,
+            function (
+                Container $container
+            ): GeneratedImageClaimService {
+                return $container->make(
+                    GeneratedImageClaimManager::class
+                );
+            }
+        );
+
+        $this->container->singleton(
+            ImageGenerationLockManager::class,
+            function (
+                Container $container
+            ): ImageGenerationLockManager {
+                return new ImageGenerationLockManager(
+                    $container->make(
+                        ConnectionInterface::class
+                    ),
+                    $container->make(
+                        LoggerInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageManager::class,
+            function (
+                Container $container
+            ): GeneratedImageManager {
+                return new GeneratedImageManager(
+                    $container->make(Paths::class),
+                    $container->make(
+                        ImageGenerationLockManager::class
                     )
                 );
             }
