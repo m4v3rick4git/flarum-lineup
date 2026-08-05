@@ -44,7 +44,7 @@ return [
             'wss-lineup.players.index',
             ListPlayersController::class
         )
-        ->get(
+        ->post(
             '/wss-lineup/api-key/test',
             'wss-lineup.api-key.test',
             TestApiKeyController::class

@@ -299,17 +299,17 @@ final class ApiFootballClient
                 'GET',
                 $endpoint,
                 [
+                    'allow_redirects' => false,
+                    'http_errors' => false,
                     'headers' => [
                         'x-apisports-key' => $apiKey,
                     ],
                     'query' => $query,
                 ]
             );
-        } catch (Throwable $exception) {
+        } catch (Throwable) {
             throw new RuntimeException(
-                'The API-Football request failed.',
-                0,
-                $exception
+                'The API-Football request failed.'
             );
         }
 
@@ -337,11 +337,9 @@ final class ApiFootballClient
                 512,
                 JSON_THROW_ON_ERROR
             );
-        } catch (JsonException $exception) {
+        } catch (JsonException) {
             throw new RuntimeException(
-                'API-Football returned invalid JSON.',
-                0,
-                $exception
+                'API-Football returned invalid JSON.'
             );
         }
 
@@ -357,21 +355,8 @@ final class ApiFootballClient
             (is_array($errors) && $errors !== []) ||
             (!is_array($errors) && $errors !== null && $errors !== '')
         ) {
-            $errorDetail = is_array($errors)
-                ? json_encode(
-                    $errors,
-                    JSON_UNESCAPED_SLASHES
-                    | JSON_UNESCAPED_UNICODE
-                )
-                : (string) $errors;
-
-            if (!is_string($errorDetail) || $errorDetail === '') {
-                $errorDetail = 'Unknown API error';
-            }
-
             throw new RuntimeException(
-                'API-Football rejected the request: '
-                .mb_substr($errorDetail, 0, 500)
+                'API-Football rejected the request.'
             );
         }
 

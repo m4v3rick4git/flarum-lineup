@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\Api\Controller;
 
+use Flarum\Http\RequestUtil;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,6 +16,10 @@ final class ListTeamsController implements RequestHandlerInterface
     public function handle(
         ServerRequestInterface $request
     ): ResponseInterface {
+        RequestUtil::getActor($request)->assertCan(
+            'wss-lineup.createLineup'
+        );
+
         $teams = Team::query()
             ->where('is_active', true)
             ->orderBy('name')

@@ -210,7 +210,7 @@ export default class ApiKeySettings extends Component {
 
     try {
       this.testResult = await app.request<ApiTestResult>({
-        method: 'GET',
+        method: 'POST',
         url: `${this.endpoint()}/test`,
       });
     } catch {
