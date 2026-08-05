@@ -28,17 +28,22 @@ final class TeamSynchronizer
 
     private SyncSafetyGuard $syncSafetyGuard;
 
+    private SyncLockManager $syncLockManager;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
         SettingsRepositoryInterface $settings,
         ConnectionInterface $database,
-        ?SyncSafetyGuard $syncSafetyGuard = null
+        ?SyncSafetyGuard $syncSafetyGuard = null,
+        ?SyncLockManager $syncLockManager = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->settings = $settings;
         $this->database = $database;
         $this->syncSafetyGuard = $syncSafetyGuard
             ?? new SyncSafetyGuard();
+        $this->syncLockManager = $syncLockManager
+            ?? new SyncLockManager($database);
     }
 
     /**
@@ -52,6 +57,23 @@ final class TeamSynchronizer
      * }
      */
     public function synchronize(): array
+    {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeUnlocked()
+        );
+    }
+
+    /**
+     * @return array{
+     *     leagueId: int,
+     *     season: int,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeUnlocked(): array
     {
         $leagueId = $this->readPositiveIntegerSetting(
             self::LEAGUE_ID_SETTING,

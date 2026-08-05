@@ -9,6 +9,7 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use GuzzleHttp\Client;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
@@ -17,6 +18,8 @@ use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 use Wss\FlarumLineup\Security\ApiKeyCipher;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
+use Wss\FlarumLineup\Sync\SyncLockManager;
+use Wss\FlarumLineup\Sync\SyncSafetyGuard;
 use Wss\FlarumLineup\Sync\TeamSynchronizer;
 
 final class LineupServiceProvider extends AbstractServiceProvider
@@ -116,6 +119,22 @@ final class LineupServiceProvider extends AbstractServiceProvider
         );
 
         $this->container->singleton(
+            SyncLockManager::class,
+            function (
+                Container $container
+            ): SyncLockManager {
+                return new SyncLockManager(
+                    $container->make(
+                        ConnectionInterface::class
+                    ),
+                    $container->make(
+                        LoggerInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
             TeamSynchronizer::class,
             function (Container $container): TeamSynchronizer {
                 return new TeamSynchronizer(
@@ -123,7 +142,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     $container->make(
                         SettingsRepositoryInterface::class
                     ),
-                    $container->make(ConnectionInterface::class)
+                    $container->make(ConnectionInterface::class),
+                    $container->make(SyncSafetyGuard::class),
+                    $container->make(SyncLockManager::class)
                 );
             }
         );
@@ -133,7 +154,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
             function (Container $container): SquadSynchronizer {
                 return new SquadSynchronizer(
                     $container->make(ApiFootballClient::class),
-                    $container->make(ConnectionInterface::class)
+                    $container->make(ConnectionInterface::class),
+                    $container->make(SyncSafetyGuard::class),
+                    $container->make(SyncLockManager::class)
                 );
             }
         );

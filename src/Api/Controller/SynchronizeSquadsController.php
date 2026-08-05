@@ -14,6 +14,7 @@ use Throwable;
 use Wss\FlarumLineup\Api\ApiFootballRequestException;
 use Wss\FlarumLineup\Model\Team;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
+use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
 
 final class SynchronizeSquadsController implements RequestHandlerInterface
 {
@@ -115,6 +116,27 @@ final class SynchronizeSquadsController implements RequestHandlerInterface
     private function errorResponse(
         Throwable $exception
     ): ResponseInterface {
+        if ($exception instanceof SyncAlreadyRunningException) {
+            return new JsonResponse(
+                [
+                    'errors' => [
+                        [
+                            'status' => '409',
+                            'code' => 'sync_already_running',
+                            'detail' => (
+                                'Another WSS Lineup synchronization '
+                                .'is already running.'
+                            ),
+                        ],
+                    ],
+                ],
+                409,
+                [
+                    'Content-Type' => 'application/vnd.api+json',
+                ]
+            );
+        }
+
         $this->logger->error(
             'WSS Lineup squad synchronization failed.',
             [

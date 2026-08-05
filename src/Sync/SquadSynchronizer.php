@@ -22,15 +22,20 @@ final class SquadSynchronizer
 
     private SyncSafetyGuard $syncSafetyGuard;
 
+    private SyncLockManager $syncLockManager;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
         ConnectionInterface $database,
-        ?SyncSafetyGuard $syncSafetyGuard = null
+        ?SyncSafetyGuard $syncSafetyGuard = null,
+        ?SyncLockManager $syncLockManager = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->database = $database;
         $this->syncSafetyGuard = $syncSafetyGuard
             ?? new SyncSafetyGuard();
+        $this->syncLockManager = $syncLockManager
+            ?? new SyncLockManager($database);
     }
 
     /**
@@ -43,6 +48,22 @@ final class SquadSynchronizer
      * }
      */
     public function synchronizeAll(): array
+    {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeAllUnlocked()
+        );
+    }
+
+    /**
+     * @return array{
+     *     teams: int,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeAllUnlocked(): array
     {
         $teams = Team::query()
             ->where('is_active', true)
@@ -64,7 +85,9 @@ final class SquadSynchronizer
         ];
 
         foreach ($teams as $team) {
-            $teamResult = $this->synchronizeTeam($team);
+            $teamResult = $this->synchronizeTeamUnlocked(
+                $team
+            );
 
             ++$result['teams'];
             $result['received'] += $teamResult['received'];
@@ -89,6 +112,27 @@ final class SquadSynchronizer
      */
     public function synchronizeTeam(Team $team): array
     {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeTeamUnlocked(
+                $team
+            )
+        );
+    }
+
+    /**
+     * @return array{
+     *     teamId: int,
+     *     apiTeamId: int,
+     *     teamName: string,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeTeamUnlocked(
+        Team $team
+    ): array {
         if (
             !$team->exists
             || (int) $team->api_team_id <= 0
