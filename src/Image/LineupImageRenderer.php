@@ -35,14 +35,14 @@ final class LineupImageRenderer
 
     private FormationCatalog $formationCatalog;
 
-    private RemoteImageFetcher $remoteImageFetcher;
+    private CachedImageAccess $cachedImageAccess;
 
     public function __construct(
         FormationCatalog $formationCatalog,
-        RemoteImageFetcher $remoteImageFetcher
+        CachedImageAccess $cachedImageAccess
     ) {
         $this->formationCatalog = $formationCatalog;
-        $this->remoteImageFetcher = $remoteImageFetcher;
+        $this->cachedImageAccess = $cachedImageAccess;
     }
 
     /**
@@ -242,7 +242,7 @@ final class LineupImageRenderer
 
         $textX = 55;
 
-        $logo = $this->remoteImageFetcher->fetch(
+        $logo = $this->cachedImageAccess->load(
             $teamLogoUrl
         );
 
@@ -487,7 +487,7 @@ final class LineupImageRenderer
             $colors['white']
         );
 
-        $photo = $this->remoteImageFetcher->fetch(
+        $photo = $this->cachedImageAccess->load(
             $player['photoUrl']
         );
 

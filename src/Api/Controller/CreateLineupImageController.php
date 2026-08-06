@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Image\GeneratedImageManager;
 use Wss\FlarumLineup\Image\ImageGenerationThrottledException;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
@@ -24,6 +25,8 @@ final class CreateLineupImageController implements
 {
     private LineupImageRenderer $renderer;
 
+    private CachedImageAccess $cachedImageAccess;
+
     private FormationCatalog $formationCatalog;
 
     private GeneratedImageManager $generatedImageManager;
@@ -34,12 +37,14 @@ final class CreateLineupImageController implements
 
     public function __construct(
         LineupImageRenderer $renderer,
+        CachedImageAccess $cachedImageAccess,
         FormationCatalog $formationCatalog,
         GeneratedImageManager $generatedImageManager,
         UrlGenerator $urlGenerator,
         LoggerInterface $logger
     ) {
         $this->renderer = $renderer;
+        $this->cachedImageAccess = $cachedImageAccess;
         $this->formationCatalog = $formationCatalog;
         $this->generatedImageManager = $generatedImageManager;
         $this->urlGenerator = $urlGenerator;
@@ -197,22 +202,29 @@ final class CreateLineupImageController implements
             $players[] = [
                 'name' => (string) $player->name,
                 'shirtNumber' => $player->shirt_number,
-                'photoUrl' => $player->photo_url,
+                'photoUrl' => $this->cachedImageAccess->playerPhotoUrl(
+                    (int) $player->provider_player_id
+                ),
             ];
         }
+
+        $teamLogoUrl = $this->cachedImageAccess->teamLogoUrl(
+            (int) $team->api_team_id
+        );
 
         try {
             $image = $this->generatedImageManager->generate(
                 (int) $actor->id,
                 function (string $outputPath) use (
                     $team,
+                    $teamLogoUrl,
                     $formation,
                     $players
                 ): void {
                     $this->renderer->render(
                         $outputPath,
                         (string) $team->name,
-                        $team->logo_url,
+                        $teamLogoUrl,
                         $formation,
                         $players
                     );

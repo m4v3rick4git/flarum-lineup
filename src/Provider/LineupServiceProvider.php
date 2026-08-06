@@ -6,6 +6,7 @@ namespace Wss\FlarumLineup\Provider;
 
 use Flarum\Foundation\AbstractServiceProvider;
 use Flarum\Foundation\Paths;
+use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 use GuzzleHttp\Client;
 use Illuminate\Contracts\Container\Container;
@@ -14,6 +15,8 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
+use Wss\FlarumLineup\Image\CachedImageAccess;
+use Wss\FlarumLineup\Image\CachedImageLocator;
 use Wss\FlarumLineup\Image\EloquentGeneratedImageCleanupRepository;
 use Wss\FlarumLineup\Image\GeneratedImageClaimManager;
 use Wss\FlarumLineup\Image\GeneratedImageClaimService;
@@ -24,7 +27,10 @@ use Wss\FlarumLineup\Image\GeneratedImageManager;
 use Wss\FlarumLineup\Image\GeneratedImageReferenceExtractor;
 use Wss\FlarumLineup\Image\ImageGenerationLockManager;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
+use Wss\FlarumLineup\Image\RemoteImageCache;
+use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Image\RemoteImageFetcher;
+use Wss\FlarumLineup\Image\RemoteImageSource;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 use Wss\FlarumLineup\Security\ApiKeyCipher;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
@@ -113,6 +119,54 @@ final class LineupServiceProvider extends AbstractServiceProvider
             }
         );
         $this->container->singleton(
+            RemoteImageSource::class,
+            static function (
+                Container $container
+            ): RemoteImageSource {
+                return $container->make(
+                    RemoteImageFetcher::class
+                );
+            }
+        );
+
+        $this->container->singleton(
+            RemoteImageCacheService::class,
+            function (
+                Container $container
+            ): RemoteImageCacheService {
+                return new RemoteImageCache(
+                    $container->make(
+                        Paths::class
+                    )->public,
+                    $container->make(
+                        RemoteImageSource::class
+                    ),
+                    $container->make(
+                        LoggerInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            CachedImageAccess::class,
+            function (
+                Container $container
+            ): CachedImageAccess {
+                return new CachedImageLocator(
+                    $container->make(
+                        Paths::class
+                    )->public,
+                    $container->make(
+                        UrlGenerator::class
+                    )
+                        ->to('forum')
+                        ->path('')
+                );
+            }
+        );
+
+        $this->container->singleton(
             LineupImageRenderer::class,
             static function (
                 Container $container
@@ -122,7 +176,7 @@ final class LineupServiceProvider extends AbstractServiceProvider
                         FormationCatalog::class
                     ),
                     $container->make(
-                        RemoteImageFetcher::class
+                        CachedImageAccess::class
                     )
                 );
             }
@@ -257,7 +311,10 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     ),
                     $container->make(ConnectionInterface::class),
                     $container->make(SyncSafetyGuard::class),
-                    $container->make(SyncLockManager::class)
+                    $container->make(SyncLockManager::class),
+                    $container->make(
+                        RemoteImageCacheService::class
+                    )
                 );
             }
         );
@@ -269,7 +326,10 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     $container->make(ApiFootballClient::class),
                     $container->make(ConnectionInterface::class),
                     $container->make(SyncSafetyGuard::class),
-                    $container->make(SyncLockManager::class)
+                    $container->make(SyncLockManager::class),
+                    $container->make(
+                        RemoteImageCacheService::class
+                    )
                 );
             }
         );

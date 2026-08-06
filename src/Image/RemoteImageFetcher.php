@@ -10,7 +10,8 @@ use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
-final class RemoteImageFetcher
+final class RemoteImageFetcher implements
+    RemoteImageSource
 {
     private const ALLOWED_HOST = 'media.api-sports.io';
 

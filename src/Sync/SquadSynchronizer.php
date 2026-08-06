@@ -9,6 +9,7 @@ use Illuminate\Database\ConnectionInterface;
 use InvalidArgumentException;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
+use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
 
@@ -24,11 +25,14 @@ final class SquadSynchronizer
 
     private SyncLockManager $syncLockManager;
 
+    private ?RemoteImageCacheService $remoteImageCache;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
         ConnectionInterface $database,
         ?SyncSafetyGuard $syncSafetyGuard = null,
-        ?SyncLockManager $syncLockManager = null
+        ?SyncLockManager $syncLockManager = null,
+        ?RemoteImageCacheService $remoteImageCache = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->database = $database;
@@ -36,6 +40,7 @@ final class SquadSynchronizer
             ?? new SyncSafetyGuard();
         $this->syncLockManager = $syncLockManager
             ?? new SyncLockManager($database);
+        $this->remoteImageCache = $remoteImageCache;
     }
 
     /**
@@ -157,6 +162,18 @@ final class SquadSynchronizer
                 count($players),
                 $existingActivePlayers
             );
+
+        if ($this->remoteImageCache !== null) {
+            foreach ($players as $playerData) {
+                $this->remoteImageCache
+                    ->cachePlayerPhoto(
+                        (int) $playerData[
+                            'apiPlayerId'
+                        ],
+                        $playerData['photoUrl']
+                    );
+            }
+        }
 
         $now = Carbon::now();
 
