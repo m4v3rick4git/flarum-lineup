@@ -58,6 +58,23 @@ final class GeneratedImageClaimManager implements
         );
     }
 
+    public function releasePost(
+        int $postId
+    ): void {
+        if ($postId <= 0) {
+            return;
+        }
+
+        $this->database->transaction(
+            function () use ($postId): void {
+                $this->releaseRemovedImages(
+                    $postId,
+                    []
+                );
+            }
+        );
+    }
+
     /**
      * @param array<int, string> $filenames
      */

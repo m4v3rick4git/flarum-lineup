@@ -14,8 +14,12 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
+use Wss\FlarumLineup\Image\EloquentGeneratedImageCleanupRepository;
 use Wss\FlarumLineup\Image\GeneratedImageClaimManager;
 use Wss\FlarumLineup\Image\GeneratedImageClaimService;
+use Wss\FlarumLineup\Image\GeneratedImageCleanupManager;
+use Wss\FlarumLineup\Image\GeneratedImageCleanupRepository;
+use Wss\FlarumLineup\Image\GeneratedImageCleanupService;
 use Wss\FlarumLineup\Image\GeneratedImageManager;
 use Wss\FlarumLineup\Image\GeneratedImageReferenceExtractor;
 use Wss\FlarumLineup\Image\ImageGenerationLockManager;
@@ -120,6 +124,43 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     $container->make(
                         RemoteImageFetcher::class
                     )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageCleanupRepository::class,
+            static function (
+                Container $container
+            ): GeneratedImageCleanupRepository {
+                return new EloquentGeneratedImageCleanupRepository();
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageCleanupManager::class,
+            function (
+                Container $container
+            ): GeneratedImageCleanupManager {
+                return new GeneratedImageCleanupManager(
+                    $container->make(Paths::class)->public,
+                    $container->make(
+                        GeneratedImageCleanupRepository::class
+                    ),
+                    $container->make(
+                        LoggerInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            GeneratedImageCleanupService::class,
+            function (
+                Container $container
+            ): GeneratedImageCleanupService {
+                return $container->make(
+                    GeneratedImageCleanupManager::class
                 );
             }
         );

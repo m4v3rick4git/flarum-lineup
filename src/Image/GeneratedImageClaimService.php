@@ -11,4 +11,8 @@ interface GeneratedImageClaimService
     public function synchronizePost(
         CommentPost $post
     ): void;
+
+    public function releasePost(
+        int $postId
+    ): void;
 }
