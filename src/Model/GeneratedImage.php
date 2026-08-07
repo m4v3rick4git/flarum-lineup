@@ -31,6 +31,8 @@ final class GeneratedImage extends AbstractModel
 
     protected $table = 'wss_lineup_generated_images';
 
+    public $timestamps = true;
+
     protected $fillable = [
         'actor_id',
         'post_id',
