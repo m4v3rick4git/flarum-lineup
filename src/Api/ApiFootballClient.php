@@ -16,12 +16,17 @@ final class ApiFootballClient
 
     private ApiKeyStore $apiKeyStore;
 
+    private ApiPayloadValidator $payloadValidator;
+
     public function __construct(
         ClientInterface $httpClient,
-        ApiKeyStore $apiKeyStore
+        ApiKeyStore $apiKeyStore,
+        ?ApiPayloadValidator $payloadValidator = null
     ) {
         $this->httpClient = $httpClient;
         $this->apiKeyStore = $apiKeyStore;
+        $this->payloadValidator = $payloadValidator
+            ?? new ApiPayloadValidator();
     }
 
     /**
@@ -128,48 +133,22 @@ final class ApiFootballClient
                 );
             }
 
-            $apiTeamId = $this->nullableInteger(
-                $team['id'] ?? null
+            $teamData = $this->payloadValidator->team(
+                $team
             );
 
-            $name = $this->nullableString(
-                $team['name'] ?? null
-            );
+            $apiTeamId = $teamData['apiTeamId'];
 
-            if ($apiTeamId === null || $apiTeamId <= 0) {
+            if (isset($teams[$apiTeamId])) {
                 throw new RuntimeException(
-                    'API-Football returned a team without a valid ID.'
+                    'API-Football returned a duplicate team ID.'
                 );
             }
 
-            if ($name === null) {
-                throw new RuntimeException(
-                    'API-Football returned a team without a name.'
-                );
-            }
-
-            $teams[] = [
-                'apiTeamId' => $apiTeamId,
-                'name' => $name,
-                'code' => $this->nullableString(
-                    $team['code'] ?? null
-                ),
-                'country' => $this->nullableString(
-                    $team['country'] ?? null
-                ),
-                'founded' => $this->nullableInteger(
-                    $team['founded'] ?? null
-                ),
-                'isNational' => (bool) (
-                    $team['national'] ?? false
-                ),
-                'logoUrl' => $this->nullableString(
-                    $team['logo'] ?? null
-                ),
-            ];
+            $teams[$apiTeamId] = $teamData;
         }
 
-        return $teams;
+        return array_values($teams);
     }
 
     /**
@@ -229,42 +208,18 @@ final class ApiFootballClient
                     );
                 }
 
-                $apiPlayerId = $this->nullableInteger(
-                    $player['id'] ?? null
-                );
+                $playerData = $this->payloadValidator
+                    ->player($player);
 
-                $name = $this->nullableString(
-                    $player['name'] ?? null
-                );
+                $apiPlayerId = $playerData['apiPlayerId'];
 
-                if ($apiPlayerId === null || $apiPlayerId <= 0) {
+                if (isset($players[$apiPlayerId])) {
                     throw new RuntimeException(
-                        'API-Football returned a player without a valid ID.'
+                        'API-Football returned a duplicate player ID.'
                     );
                 }
 
-                if ($name === null) {
-                    throw new RuntimeException(
-                        'API-Football returned a player without a name.'
-                    );
-                }
-
-                $players[$apiPlayerId] = [
-                    'apiPlayerId' => $apiPlayerId,
-                    'name' => $name,
-                    'age' => $this->nullableInteger(
-                        $player['age'] ?? null
-                    ),
-                    'shirtNumber' => $this->nullableInteger(
-                        $player['number'] ?? null
-                    ),
-                    'position' => $this->nullableString(
-                        $player['position'] ?? null
-                    ),
-                    'photoUrl' => $this->nullableString(
-                        $player['photo'] ?? null
-                    ),
-                ];
+                $players[$apiPlayerId] = $playerData;
             }
         }
 
@@ -299,17 +254,17 @@ final class ApiFootballClient
                 'GET',
                 $endpoint,
                 [
+                    'allow_redirects' => false,
+                    'http_errors' => false,
                     'headers' => [
                         'x-apisports-key' => $apiKey,
                     ],
                     'query' => $query,
                 ]
             );
-        } catch (Throwable $exception) {
+        } catch (Throwable) {
             throw new RuntimeException(
-                'The API-Football request failed.',
-                0,
-                $exception
+                'The API-Football request failed.'
             );
         }
 
@@ -337,11 +292,9 @@ final class ApiFootballClient
                 512,
                 JSON_THROW_ON_ERROR
             );
-        } catch (JsonException $exception) {
+        } catch (JsonException) {
             throw new RuntimeException(
-                'API-Football returned invalid JSON.',
-                0,
-                $exception
+                'API-Football returned invalid JSON.'
             );
         }
 
@@ -357,21 +310,8 @@ final class ApiFootballClient
             (is_array($errors) && $errors !== []) ||
             (!is_array($errors) && $errors !== null && $errors !== '')
         ) {
-            $errorDetail = is_array($errors)
-                ? json_encode(
-                    $errors,
-                    JSON_UNESCAPED_SLASHES
-                    | JSON_UNESCAPED_UNICODE
-                )
-                : (string) $errors;
-
-            if (!is_string($errorDetail) || $errorDetail === '') {
-                $errorDetail = 'Unknown API error';
-            }
-
             throw new RuntimeException(
-                'API-Football rejected the request: '
-                .mb_substr($errorDetail, 0, 500)
+                'API-Football rejected the request.'
             );
         }
 

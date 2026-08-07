@@ -10,6 +10,7 @@ use Illuminate\Database\ConnectionInterface;
 use InvalidArgumentException;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
+use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Model\Team;
 
 final class TeamSynchronizer
@@ -26,14 +27,28 @@ final class TeamSynchronizer
 
     private ConnectionInterface $database;
 
+    private SyncSafetyGuard $syncSafetyGuard;
+
+    private SyncLockManager $syncLockManager;
+
+    private ?RemoteImageCacheService $remoteImageCache;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
         SettingsRepositoryInterface $settings,
-        ConnectionInterface $database
+        ConnectionInterface $database,
+        ?SyncSafetyGuard $syncSafetyGuard = null,
+        ?SyncLockManager $syncLockManager = null,
+        ?RemoteImageCacheService $remoteImageCache = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->settings = $settings;
         $this->database = $database;
+        $this->syncSafetyGuard = $syncSafetyGuard
+            ?? new SyncSafetyGuard();
+        $this->syncLockManager = $syncLockManager
+            ?? new SyncLockManager($database);
+        $this->remoteImageCache = $remoteImageCache;
     }
 
     /**
@@ -47,6 +62,23 @@ final class TeamSynchronizer
      * }
      */
     public function synchronize(): array
+    {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeUnlocked()
+        );
+    }
+
+    /**
+     * @return array{
+     *     leagueId: int,
+     *     season: int,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeUnlocked(): array
     {
         $leagueId = $this->readPositiveIntegerSetting(
             self::LEAGUE_ID_SETTING,
@@ -69,10 +101,24 @@ final class TeamSynchronizer
             $season
         );
 
-        if ($teams === []) {
-            throw new RuntimeException(
-                'API-Football returned an empty team list.'
+        $existingActiveTeams = (int) Team::query()
+            ->where('is_active', true)
+            ->count();
+
+        $this->syncSafetyGuard
+            ->assertTeamResponseIsComplete(
+                count($teams),
+                $existingActiveTeams
             );
+
+        if ($this->remoteImageCache !== null) {
+            foreach ($teams as $teamData) {
+                $this->remoteImageCache
+                    ->cacheTeamLogo(
+                        $teamData['apiTeamId'],
+                        $teamData['logoUrl']
+                    );
+            }
         }
 
         $now = Carbon::now();

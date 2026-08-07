@@ -9,6 +9,7 @@ use Illuminate\Database\ConnectionInterface;
 use InvalidArgumentException;
 use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
+use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
 
@@ -20,12 +21,26 @@ final class SquadSynchronizer
 
     private ConnectionInterface $database;
 
+    private SyncSafetyGuard $syncSafetyGuard;
+
+    private SyncLockManager $syncLockManager;
+
+    private ?RemoteImageCacheService $remoteImageCache;
+
     public function __construct(
         ApiFootballClient $apiFootballClient,
-        ConnectionInterface $database
+        ConnectionInterface $database,
+        ?SyncSafetyGuard $syncSafetyGuard = null,
+        ?SyncLockManager $syncLockManager = null,
+        ?RemoteImageCacheService $remoteImageCache = null
     ) {
         $this->apiFootballClient = $apiFootballClient;
         $this->database = $database;
+        $this->syncSafetyGuard = $syncSafetyGuard
+            ?? new SyncSafetyGuard();
+        $this->syncLockManager = $syncLockManager
+            ?? new SyncLockManager($database);
+        $this->remoteImageCache = $remoteImageCache;
     }
 
     /**
@@ -38,6 +53,22 @@ final class SquadSynchronizer
      * }
      */
     public function synchronizeAll(): array
+    {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeAllUnlocked()
+        );
+    }
+
+    /**
+     * @return array{
+     *     teams: int,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeAllUnlocked(): array
     {
         $teams = Team::query()
             ->where('is_active', true)
@@ -59,7 +90,9 @@ final class SquadSynchronizer
         ];
 
         foreach ($teams as $team) {
-            $teamResult = $this->synchronizeTeam($team);
+            $teamResult = $this->synchronizeTeamUnlocked(
+                $team
+            );
 
             ++$result['teams'];
             $result['received'] += $teamResult['received'];
@@ -84,6 +117,27 @@ final class SquadSynchronizer
      */
     public function synchronizeTeam(Team $team): array
     {
+        return $this->syncLockManager->run(
+            fn (): array => $this->synchronizeTeamUnlocked(
+                $team
+            )
+        );
+    }
+
+    /**
+     * @return array{
+     *     teamId: int,
+     *     apiTeamId: int,
+     *     teamName: string,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeTeamUnlocked(
+        Team $team
+    ): array {
         if (
             !$team->exists
             || (int) $team->api_team_id <= 0
@@ -97,13 +151,28 @@ final class SquadSynchronizer
             (int) $team->api_team_id
         );
 
-        if ($players === []) {
-            throw new RuntimeException(
-                sprintf(
-                    'API-Football returned an empty squad for team %d.',
-                    $team->api_team_id
-                )
+        $existingActivePlayers = (int) Player::query()
+            ->where('team_id', $team->id)
+            ->where('provider', self::PROVIDER)
+            ->where('is_active', true)
+            ->count();
+
+        $this->syncSafetyGuard
+            ->assertSquadResponseIsComplete(
+                count($players),
+                $existingActivePlayers
             );
+
+        if ($this->remoteImageCache !== null) {
+            foreach ($players as $playerData) {
+                $this->remoteImageCache
+                    ->cachePlayerPhoto(
+                        (int) $playerData[
+                            'apiPlayerId'
+                        ],
+                        $playerData['photoUrl']
+                    );
+            }
         }
 
         $now = Carbon::now();

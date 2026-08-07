@@ -13,6 +13,9 @@ namespace Wss\FlarumLineup;
 
 use Flarum\Api\Serializer\ForumSerializer;
 use Flarum\Extend;
+use Flarum\Post\Event\Deleted;
+use Flarum\Post\Event\Posted;
+use Flarum\Post\Event\Revised;
 use Illuminate\Console\Scheduling\Event;
 use Wss\FlarumLineup\Api\Controller\CreateLineupImageController;
 use Wss\FlarumLineup\Api\Controller\DeleteApiKeyController;
@@ -23,8 +26,12 @@ use Wss\FlarumLineup\Api\Controller\SynchronizeSquadsController;
 use Wss\FlarumLineup\Api\Controller\SynchronizeTeamsController;
 use Wss\FlarumLineup\Api\Controller\TestApiKeyController;
 use Wss\FlarumLineup\Api\Controller\ShowApiKeyStatusController;
+use Wss\FlarumLineup\Console\CleanupGeneratedImagesCommand;
 use Wss\FlarumLineup\Console\SynchronizeSquadsCommand;
 use Wss\FlarumLineup\Console\SynchronizeTeamsCommand;
+use Wss\FlarumLineup\Listener\HandleDeletedGeneratedImages;
+use Wss\FlarumLineup\Listener\HandlePostedGeneratedImages;
+use Wss\FlarumLineup\Listener\HandleRevisedGeneratedImages;
 use Wss\FlarumLineup\Provider\LineupServiceProvider;
 
 return [
@@ -44,7 +51,7 @@ return [
             'wss-lineup.players.index',
             ListPlayersController::class
         )
-        ->get(
+        ->post(
             '/wss-lineup/api-key/test',
             'wss-lineup.api-key.test',
             TestApiKeyController::class
@@ -75,8 +82,18 @@ return [
             DeleteApiKeyController::class
         ),
     (new Extend\Console())
+        ->command(CleanupGeneratedImagesCommand::class)
         ->command(SynchronizeTeamsCommand::class)
         ->command(SynchronizeSquadsCommand::class)
+        ->schedule(
+            CleanupGeneratedImagesCommand::class,
+            function (Event $event): void {
+                $event
+                    ->dailyAt('03:30')
+                    ->timezone('Europe/Vienna')
+                    ->withoutOverlapping(15);
+            }
+        )
         ->schedule(
             SynchronizeTeamsCommand::class,
             function (Event $event): void {
@@ -94,6 +111,19 @@ return [
                     ->timezone('Europe/Vienna')
                     ->withoutOverlapping(30);
             }
+        ),
+    (new Extend\Event())
+        ->listen(
+            Deleted::class,
+            HandleDeletedGeneratedImages::class
+        )
+        ->listen(
+            Posted::class,
+            HandlePostedGeneratedImages::class
+        )
+        ->listen(
+            Revised::class,
+            HandleRevisedGeneratedImages::class
         ),
     (new Extend\ApiSerializer(ForumSerializer::class))
         ->attribute(

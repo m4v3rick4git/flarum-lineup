@@ -4,18 +4,32 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\Api\Controller;
 
+use Flarum\Http\RequestUtil;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
 
 final class ListPlayersController implements RequestHandlerInterface
 {
+    private CachedImageAccess $cachedImageAccess;
+
+    public function __construct(
+        CachedImageAccess $cachedImageAccess
+    ) {
+        $this->cachedImageAccess = $cachedImageAccess;
+    }
+
     public function handle(
         ServerRequestInterface $request
     ): ResponseInterface {
+        RequestUtil::getActor($request)->assertCan(
+            'wss-lineup.createLineup'
+        );
+
         $query = $request->getQueryParams();
 
         $teamId = filter_var(
@@ -56,14 +70,16 @@ final class ListPlayersController implements RequestHandlerInterface
             ->orderBy('name')
             ->get()
             ->map(
-                static function (Player $player): array {
+                function (Player $player): array {
                     return [
                         'id' => (int) $player->id,
                         'name' => (string) $player->name,
                         'age' => $player->age,
                         'shirtNumber' => $player->shirt_number,
                         'position' => $player->position,
-                        'photoUrl' => $player->photo_url,
+                        'photoUrl' => $this->cachedImageAccess->playerPhotoUrl(
+                            (int) $player->provider_player_id
+                        ),
                     ];
                 }
             )
@@ -75,7 +91,9 @@ final class ListPlayersController implements RequestHandlerInterface
                 'id' => (int) $team->id,
                 'name' => (string) $team->name,
                 'code' => $team->code,
-                'logoUrl' => $team->logo_url,
+                'logoUrl' => $this->cachedImageAccess->teamLogoUrl(
+                    (int) $team->api_team_id
+                ),
             ],
             'players' => $players,
         ]);

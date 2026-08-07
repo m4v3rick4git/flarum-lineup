@@ -11,6 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
 use Wss\FlarumLineup\Sync\TeamSynchronizer;
 
 final class SynchronizeTeamsController implements RequestHandlerInterface
@@ -34,6 +35,25 @@ final class SynchronizeTeamsController implements RequestHandlerInterface
 
         try {
             $result = $this->teamSynchronizer->synchronize();
+        } catch (SyncAlreadyRunningException) {
+            return new JsonResponse(
+                [
+                    'errors' => [
+                        [
+                            'status' => '409',
+                            'code' => 'sync_already_running',
+                            'detail' => (
+                                'Another WSS Lineup synchronization '
+                                .'is already running.'
+                            ),
+                        ],
+                    ],
+                ],
+                409,
+                [
+                    'Content-Type' => 'application/vnd.api+json',
+                ]
+            );
         } catch (Throwable $exception) {
             $this->logger->error(
                 'WSS Lineup team synchronization failed.',

@@ -35,10 +35,14 @@ final class LineupImageRenderer
 
     private FormationCatalog $formationCatalog;
 
+    private CachedImageAccess $cachedImageAccess;
+
     public function __construct(
-        FormationCatalog $formationCatalog
+        FormationCatalog $formationCatalog,
+        CachedImageAccess $cachedImageAccess
     ) {
         $this->formationCatalog = $formationCatalog;
+        $this->cachedImageAccess = $cachedImageAccess;
     }
 
     /**
@@ -238,7 +242,7 @@ final class LineupImageRenderer
 
         $textX = 55;
 
-        $logo = $this->loadRemoteImage(
+        $logo = $this->cachedImageAccess->load(
             $teamLogoUrl
         );
 
@@ -483,7 +487,7 @@ final class LineupImageRenderer
             $colors['white']
         );
 
-        $photo = $this->loadRemoteImage(
+        $photo = $this->cachedImageAccess->load(
             $player['photoUrl']
         );
 
@@ -669,54 +673,6 @@ final class LineupImageRenderer
         imagealphablending($thumbnail, true);
 
         return $thumbnail;
-    }
-
-    private function loadRemoteImage(
-        ?string $url
-    ): ?GdImage {
-        if (
-            $url === null
-            || !preg_match(
-                '#^https://#i',
-                $url
-            )
-        ) {
-            return null;
-        }
-
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 5,
-                'user_agent' => 'WSS-Lineup/1.0',
-                'follow_location' => 1,
-                'max_redirects' => 3,
-            ],
-            'ssl' => [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
-
-        $contents = @file_get_contents(
-            $url,
-            false,
-            $context,
-            0,
-            5_000_000
-        );
-
-        if (
-            !is_string($contents)
-            || $contents === ''
-        ) {
-            return null;
-        }
-
-        $image = @imagecreatefromstring($contents);
-
-        return $image instanceof GdImage
-            ? $image
-            : null;
     }
 
     private function copyImageContained(

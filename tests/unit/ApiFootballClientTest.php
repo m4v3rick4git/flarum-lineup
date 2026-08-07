@@ -64,8 +64,7 @@ final class ApiFootballClientTest extends TestCase
                                         'founded' => 1933,
                                         'national' => false,
                                         'logo' => (
-                                            'https://example.test/'
-                                            .'team-571.png'
+                                            'https://media.api-sports.io/football/teams/571.png'
                                         ),
                                     ],
                                 ],
@@ -102,7 +101,7 @@ final class ApiFootballClientTest extends TestCase
                     'founded' => 1933,
                     'isNational' => false,
                     'logoUrl' => (
-                        'https://example.test/team-571.png'
+                        'https://media.api-sports.io/football/teams/571.png'
                     ),
                 ],
                 [
@@ -163,8 +162,7 @@ final class ApiFootballClientTest extends TestCase
                                             'number' => 1,
                                             'position' => 'Goalkeeper',
                                             'photo' => (
-                                                'https://example.test/'
-                                                .'player-1001.png'
+                                                'https://media.api-sports.io/football/players/1001.png'
                                             ),
                                         ],
                                         [
@@ -198,7 +196,7 @@ final class ApiFootballClientTest extends TestCase
                     'shirtNumber' => 1,
                     'position' => 'Goalkeeper',
                     'photoUrl' => (
-                        'https://example.test/player-1001.png'
+                        'https://media.api-sports.io/football/players/1001.png'
                     ),
                 ],
                 [

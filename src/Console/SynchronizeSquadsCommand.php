@@ -10,6 +10,8 @@ use Throwable;
 use Wss\FlarumLineup\Api\ApiFootballRequestException;
 use Wss\FlarumLineup\Model\Team;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
+use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
+use Wss\FlarumLineup\Sync\SyncLockManager;
 
 final class SynchronizeSquadsCommand extends AbstractCommand
 {
@@ -17,14 +19,19 @@ final class SynchronizeSquadsCommand extends AbstractCommand
     private const RATE_LIMIT_RETRY_SECONDS = 60;
 
     private SquadSynchronizer $squadSynchronizer;
+
     private LoggerInterface $logger;
+
+    private SyncLockManager $syncLockManager;
 
     public function __construct(
         SquadSynchronizer $squadSynchronizer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        SyncLockManager $syncLockManager
     ) {
         $this->squadSynchronizer = $squadSynchronizer;
         $this->logger = $logger;
+        $this->syncLockManager = $syncLockManager;
 
         parent::__construct();
     }
@@ -39,6 +46,25 @@ final class SynchronizeSquadsCommand extends AbstractCommand
     }
 
     protected function fire()
+    {
+        try {
+            return $this->syncLockManager->run(
+                fn (): int => $this->runSynchronization()
+            );
+        } catch (SyncAlreadyRunningException) {
+            $message = (
+                'Squad synchronization skipped: '
+                .'another WSS Lineup synchronization is already running.'
+            );
+
+            $this->logger->info($message);
+            $this->info($message);
+
+            return 0;
+        }
+    }
+
+    private function runSynchronization(): int
     {
         $teams = Team::query()
             ->where('is_active', true)

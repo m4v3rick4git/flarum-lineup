@@ -7,6 +7,7 @@ namespace Wss\FlarumLineup\Console;
 use Flarum\Console\AbstractCommand;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
 use Wss\FlarumLineup\Sync\TeamSynchronizer;
 
 final class SynchronizeTeamsCommand extends AbstractCommand
@@ -50,6 +51,16 @@ final class SynchronizeTeamsCommand extends AbstractCommand
 
             $this->logger->info($summary);
             $this->info($summary);
+
+            return 0;
+        } catch (SyncAlreadyRunningException) {
+            $message = (
+                'Team synchronization skipped: '
+                .'another WSS Lineup synchronization is already running.'
+            );
+
+            $this->logger->info($message);
+            $this->info($message);
 
             return 0;
         } catch (Throwable $exception) {
