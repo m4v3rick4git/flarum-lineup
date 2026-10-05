@@ -28,10 +28,10 @@ final class LineupImageRenderer
     private const PLAYER_PHOTO_SIZE = 88;
 
     private const FONT_REGULAR =
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+        __DIR__.'/../../resources/fonts/DejaVuSans.ttf';
 
     private const FONT_BOLD =
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+        __DIR__.'/../../resources/fonts/DejaVuSans-Bold.ttf';
 
     private FormationCatalog $formationCatalog;
 
