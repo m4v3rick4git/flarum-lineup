@@ -12,13 +12,9 @@ use PHPUnit\Framework\TestCase;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiFootballRequestException;
 use Wss\FlarumLineup\Api\ApiKeyStore;
-use Wss\FlarumLineup\Security\ApiKeyCipher;
 
 final class ApiFootballClientTest extends TestCase
 {
-    private const ENCRYPTION_KEY =
-        '0123456789abcdef0123456789abcdef'
-        .'0123456789abcdef0123456789abcdef';
 
     public function testItFetchesAndMapsTeams(): void
     {
@@ -384,7 +380,6 @@ final class ApiFootballClientTest extends TestCase
     private function createApiKeyStore(
         ?string $apiKey
     ): ApiKeyStore {
-        $cipher = new ApiKeyCipher(self::ENCRYPTION_KEY);
         $settings = $this->createMock(
             SettingsRepositoryInterface::class
         );
@@ -392,12 +387,8 @@ final class ApiFootballClientTest extends TestCase
         $settings
             ->method('get')
             ->with(ApiKeyStore::SETTING_KEY)
-            ->willReturn(
-                $apiKey !== null
-                    ? $cipher->encrypt($apiKey)
-                    : null
-            );
+            ->willReturn($apiKey);
 
-        return new ApiKeyStore($settings, $cipher);
+        return new ApiKeyStore($settings);
     }
 }

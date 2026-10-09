@@ -12,7 +12,6 @@ use GuzzleHttp\Client;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
 use Wss\FlarumLineup\Image\CachedImageAccess;
@@ -32,7 +31,6 @@ use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Image\RemoteImageSource;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
-use Wss\FlarumLineup\Security\ApiKeyCipher;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
 use Wss\FlarumLineup\Sync\SyncLockManager;
 use Wss\FlarumLineup\Sync\SyncSafetyGuard;
@@ -42,22 +40,6 @@ final class LineupServiceProvider extends AbstractServiceProvider
 {
     public function register(): void
     {
-        $this->container->singleton(
-            ApiKeyCipher::class,
-            function (Container $container): ApiKeyCipher {
-                $encryptionKey = trim(
-                    (string) getenv('WSS_LINEUP_ENCRYPTION_KEY')
-                );
-
-                if ($encryptionKey === '') {
-                    throw new RuntimeException(
-                        'WSS_LINEUP_ENCRYPTION_KEY is not configured.'
-                    );
-                }
-
-                return new ApiKeyCipher($encryptionKey);
-            }
-        );
 
         $this->container->singleton(
             ApiKeyStore::class,
@@ -65,8 +47,7 @@ final class LineupServiceProvider extends AbstractServiceProvider
                 return new ApiKeyStore(
                     $container->make(
                         SettingsRepositoryInterface::class
-                    ),
-                    $container->make(ApiKeyCipher::class)
+                    )
                 );
             }
         );

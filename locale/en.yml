@@ -15,12 +15,12 @@ m4v3rick4git-lineup:
       status_configured: API key configured
       status_missing: No API key configured
       status_error: The API-key status could not be loaded.
-      source_database: An encrypted API key is stored in the database.
+      source_database: An API key is stored in the database.
       source_none: No API-key source is available.
       input_placeholder: Enter a new API key
       save_button: Save API key
       saving_button: Saving...
-      saved_message: The API key was encrypted and saved.
+      saved_message: The API key was saved.
       save_error: The API key could not be saved.
       delete_button: Delete stored API key
       deleting_button: Deleting...

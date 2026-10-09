@@ -45,31 +45,6 @@ php flarum cache:clear
 
 Enable **Flarum Lineup** in the Flarum administration panel.
 
-## Encryption key
-
-The extension requires the following environment variable:
-
-```text
-WSS_LINEUP_ENCRYPTION_KEY
-```
-
-Its value must contain exactly 64 hexadecimal characters, representing a random 32-byte key.
-
-Generate a suitable key with PHP:
-
-```sh
-php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
-```
-
-Add the generated value to the environment used by both the Flarum web process and CLI processes.
-
-Example:
-
-```env
-WSS_LINEUP_ENCRYPTION_KEY=replace_with_your_64_character_hexadecimal_key
-```
-
-Keep this key secret, stable and backed up. Changing or losing it prevents the extension from decrypting an API key that was already stored.
 
 ## Configuration
 
@@ -126,13 +101,13 @@ php flarum cache:clear
 
 ## Security
 
-The API-Football key is encrypted before it is stored in the Flarum settings table. The encryption key itself is not stored in the database and must be supplied through `WSS_LINEUP_ENCRYPTION_KEY`.
+The API-Football key is stored in the Flarum settings table and is used only server-side for requests to API-Football. It is not returned to the administration frontend after it has been saved. Protect access to the database and database backups accordingly.
 
 Remote images are restricted to the expected API-Football image host and paths, validated before decoding and stored locally as normalized PNG files.
 
 Generated images, team logos and player photos are stored in the forum's public asset directory. Their URLs must not be treated as private or protected resources.
 
-Do not commit API keys or the encryption key to the repository.
+Do not commit API keys to the repository.
 
 ## Links
 
