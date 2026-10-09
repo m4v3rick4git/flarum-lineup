@@ -14,6 +14,8 @@ use Illuminate\Database\ConnectionInterface;
 use Psr\Log\LoggerInterface;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
+use Wss\FlarumLineup\DataProvider\ApiFootballProvider;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Image\CachedImageLocator;
 use Wss\FlarumLineup\Image\EloquentGeneratedImageCleanupRepository;
@@ -71,6 +73,34 @@ final class LineupServiceProvider extends AbstractServiceProvider
                 return new ApiFootballClient(
                     $httpClient,
                     $container->make(ApiKeyStore::class)
+                );
+            }
+        );
+
+        $this->container->singleton(
+            ApiFootballProvider::class,
+            function (Container $container): ApiFootballProvider {
+                return new ApiFootballProvider(
+                    $container->make(ApiFootballClient::class),
+                    $container->make(
+                        SettingsRepositoryInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            DataProviderResolver::class,
+            function (Container $container): DataProviderResolver {
+                return new DataProviderResolver(
+                    $container->make(
+                        SettingsRepositoryInterface::class
+                    ),
+                    [
+                        $container->make(
+                            ApiFootballProvider::class
+                        ),
+                    ]
                 );
             }
         );
