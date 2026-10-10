@@ -1,6 +1,6 @@
 name: Flarum Lineup PHP
 
-on: [workflow_dispatch, push, pull_request]
+on: [workflow_dispatch, push]
 
 jobs:
   run:
