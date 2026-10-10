@@ -30,7 +30,7 @@ final class SynchronizeTeamsCommand extends AbstractCommand
         $this
             ->setName('wss-lineup:sync-teams')
             ->setDescription(
-                'Synchronize configured league teams from API-Football.'
+                'Synchronize teams from the selected WSS Lineup data provider.'
             );
     }
 
@@ -40,9 +40,8 @@ final class SynchronizeTeamsCommand extends AbstractCommand
             $result = $this->teamSynchronizer->synchronize();
 
             $summary = sprintf(
-                'Team synchronization completed. League: %d; season: %d; received: %d; created: %d; updated: %d; deactivated: %d.',
-                $result['leagueId'],
-                $result['season'],
+                'Team synchronization completed. Provider: %s; received: %d; created: %d; updated: %d; deactivated: %d.',
+                $result['provider'],
                 $result['received'],
                 $result['created'],
                 $result['updated'],

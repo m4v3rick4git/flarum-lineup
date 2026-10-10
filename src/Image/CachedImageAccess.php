@@ -9,11 +9,13 @@ use GdImage;
 interface CachedImageAccess
 {
     public function teamLogoUrl(
-        int $apiTeamId
+        string $provider,
+        string $providerTeamId
     ): ?string;
 
     public function playerPhotoUrl(
-        int $apiPlayerId
+        string $provider,
+        string $providerPlayerId
     ): ?string;
 
     public function load(

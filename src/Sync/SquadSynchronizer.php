@@ -8,16 +8,15 @@ use Carbon\Carbon;
 use Illuminate\Database\ConnectionInterface;
 use InvalidArgumentException;
 use RuntimeException;
-use Wss\FlarumLineup\Api\ApiFootballClient;
+use Wss\FlarumLineup\DataProvider\DataProviderInterface;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
 
 final class SquadSynchronizer
 {
-    private const PROVIDER = 'api-football';
-
-    private ApiFootballClient $apiFootballClient;
+    private DataProviderResolver $dataProviderResolver;
 
     private ConnectionInterface $database;
 
@@ -28,13 +27,13 @@ final class SquadSynchronizer
     private ?RemoteImageCacheService $remoteImageCache;
 
     public function __construct(
-        ApiFootballClient $apiFootballClient,
+        DataProviderResolver $dataProviderResolver,
         ConnectionInterface $database,
         ?SyncSafetyGuard $syncSafetyGuard = null,
         ?SyncLockManager $syncLockManager = null,
         ?RemoteImageCacheService $remoteImageCache = null
     ) {
-        $this->apiFootballClient = $apiFootballClient;
+        $this->dataProviderResolver = $dataProviderResolver;
         $this->database = $database;
         $this->syncSafetyGuard = $syncSafetyGuard
             ?? new SyncSafetyGuard();
@@ -45,6 +44,7 @@ final class SquadSynchronizer
 
     /**
      * @return array{
+     *     provider: string,
      *     teams: int,
      *     received: int,
      *     created: int,
@@ -61,6 +61,7 @@ final class SquadSynchronizer
 
     /**
      * @return array{
+     *     provider: string,
      *     teams: int,
      *     received: int,
      *     created: int,
@@ -70,18 +71,23 @@ final class SquadSynchronizer
      */
     private function synchronizeAllUnlocked(): array
     {
+        $provider = $this->dataProviderResolver->resolve();
+        $providerKey = $provider->providerKey();
+
         $teams = Team::query()
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->orderBy('id')
             ->get();
 
         if ($teams->isEmpty()) {
             throw new RuntimeException(
-                'No active teams are available for squad synchronization.'
+                'No active teams are available for the selected data provider.'
             );
         }
 
         $result = [
+            'provider' => $providerKey,
             'teams' => 0,
             'received' => 0,
             'created' => 0,
@@ -90,8 +96,10 @@ final class SquadSynchronizer
         ];
 
         foreach ($teams as $team) {
-            $teamResult = $this->synchronizeTeamUnlocked(
-                $team
+            $teamResult = $this->synchronizeTeamWithProvider(
+                $team,
+                $provider,
+                $providerKey
             );
 
             ++$result['teams'];
@@ -107,7 +115,8 @@ final class SquadSynchronizer
     /**
      * @return array{
      *     teamId: int,
-     *     apiTeamId: int,
+     *     provider: string,
+     *     providerTeamId: string,
      *     teamName: string,
      *     received: int,
      *     created: int,
@@ -118,16 +127,15 @@ final class SquadSynchronizer
     public function synchronizeTeam(Team $team): array
     {
         return $this->syncLockManager->run(
-            fn (): array => $this->synchronizeTeamUnlocked(
-                $team
-            )
+            fn (): array => $this->synchronizeTeamUnlocked($team)
         );
     }
 
     /**
      * @return array{
      *     teamId: int,
-     *     apiTeamId: int,
+     *     provider: string,
+     *     providerTeamId: string,
      *     teamName: string,
      *     received: int,
      *     created: int,
@@ -135,25 +143,67 @@ final class SquadSynchronizer
      *     deactivated: int
      * }
      */
-    private function synchronizeTeamUnlocked(
-        Team $team
+    private function synchronizeTeamUnlocked(Team $team): array
+    {
+        $provider = $this->dataProviderResolver->resolve();
+
+        return $this->synchronizeTeamWithProvider(
+            $team,
+            $provider,
+            $provider->providerKey()
+        );
+    }
+
+    /**
+     * @return array{
+     *     teamId: int,
+     *     provider: string,
+     *     providerTeamId: string,
+     *     teamName: string,
+     *     received: int,
+     *     created: int,
+     *     updated: int,
+     *     deactivated: int
+     * }
+     */
+    private function synchronizeTeamWithProvider(
+        Team $team,
+        DataProviderInterface $provider,
+        string $providerKey
     ): array {
+        $providerTeamId = trim((string) $team->provider_team_id);
+
         if (
             !$team->exists
-            || (int) $team->api_team_id <= 0
+            || (string) $team->provider !== $providerKey
+            || $providerTeamId === ''
         ) {
             throw new InvalidArgumentException(
-                'A persisted team with a valid API team ID is required.'
+                'A persisted team belonging to the selected data provider is required.'
             );
         }
 
-        $players = $this->apiFootballClient->fetchSquad(
-            (int) $team->api_team_id
-        );
+        $players = $provider->fetchSquad($providerTeamId);
+
+        foreach ($players as &$playerData) {
+            $providerPlayerId = trim(
+                (string) $playerData['providerPlayerId']
+            );
+
+            if ($providerPlayerId === '') {
+                throw new InvalidArgumentException(
+                    'A data provider returned an empty player ID.'
+                );
+            }
+
+            $playerData['providerPlayerId'] = $providerPlayerId;
+        }
+
+        unset($playerData);
 
         $existingActivePlayers = (int) Player::query()
             ->where('team_id', $team->id)
-            ->where('provider', self::PROVIDER)
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->count();
 
@@ -165,13 +215,11 @@ final class SquadSynchronizer
 
         if ($this->remoteImageCache !== null) {
             foreach ($players as $playerData) {
-                $this->remoteImageCache
-                    ->cachePlayerPhoto(
-                        (int) $playerData[
-                            'apiPlayerId'
-                        ],
-                        $playerData['photoUrl']
-                    );
+                $this->remoteImageCache->cachePlayerPhoto(
+                    $providerKey,
+                    $playerData['providerPlayerId'],
+                    $playerData['photoUrl']
+                );
             }
         }
 
@@ -181,6 +229,8 @@ final class SquadSynchronizer
             function () use (
                 $team,
                 $players,
+                $providerKey,
+                $providerTeamId,
                 $now
             ): array {
                 $created = 0;
@@ -188,14 +238,11 @@ final class SquadSynchronizer
                 $providerPlayerIds = [];
 
                 foreach ($players as $playerData) {
-                    $providerPlayerId = (string) (
-                        $playerData['apiPlayerId']
-                    );
-
+                    $providerPlayerId = $playerData['providerPlayerId'];
                     $providerPlayerIds[] = $providerPlayerId;
 
                     $player = Player::query()->firstOrNew([
-                        'provider' => self::PROVIDER,
+                        'provider' => $providerKey,
                         'provider_player_id' => $providerPlayerId,
                     ]);
 
@@ -203,11 +250,11 @@ final class SquadSynchronizer
 
                     $player->fill([
                         'team_id' => $team->id,
+                        'provider' => $providerKey,
+                        'provider_player_id' => $providerPlayerId,
                         'name' => $playerData['name'],
                         'age' => $playerData['age'],
-                        'shirt_number' => (
-                            $playerData['shirtNumber']
-                        ),
+                        'shirt_number' => $playerData['shirtNumber'],
                         'position' => $playerData['position'],
                         'photo_url' => $playerData['photoUrl'],
                         'is_active' => true,
@@ -225,7 +272,7 @@ final class SquadSynchronizer
 
                 $deactivated = Player::query()
                     ->where('team_id', $team->id)
-                    ->where('provider', self::PROVIDER)
+                    ->where('provider', $providerKey)
                     ->whereNotIn(
                         'provider_player_id',
                         $providerPlayerIds
@@ -238,7 +285,8 @@ final class SquadSynchronizer
 
                 return [
                     'teamId' => (int) $team->id,
-                    'apiTeamId' => (int) $team->api_team_id,
+                    'provider' => $providerKey,
+                    'providerTeamId' => $providerTeamId,
                     'teamName' => (string) $team->name,
                     'received' => count($players),
                     'created' => $created,

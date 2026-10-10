@@ -6,34 +6,25 @@ namespace Wss\FlarumLineup\Api;
 
 use Flarum\Settings\SettingsRepositoryInterface;
 use InvalidArgumentException;
-use Wss\FlarumLineup\Security\ApiKeyCipher;
 
 final class ApiKeyStore
 {
-    public const SETTING_KEY = 'wss-lineup.api_key_encrypted';
+    public const SETTING_KEY = 'wss-lineup.api_key';
 
     public const SOURCE_DATABASE = 'database';
     public const SOURCE_NONE = 'none';
 
     private SettingsRepositoryInterface $settings;
 
-    private ApiKeyCipher $cipher;
-
     public function __construct(
-        SettingsRepositoryInterface $settings,
-        ApiKeyCipher $cipher
+        SettingsRepositoryInterface $settings
     ) {
         $this->settings = $settings;
-        $this->cipher = $cipher;
     }
 
     public function get(): ?string
     {
-        $storedPayload = $this->storedPayload();
-
-        return $storedPayload !== null
-            ? $this->cipher->decrypt($storedPayload)
-            : null;
+        return $this->storedValue();
     }
 
     public function store(string $apiKey): void
@@ -48,7 +39,7 @@ final class ApiKeyStore
 
         $this->settings->set(
             self::SETTING_KEY,
-            $this->cipher->encrypt($apiKey)
+            $apiKey
         );
     }
 
@@ -71,10 +62,10 @@ final class ApiKeyStore
 
     public function hasStoredKey(): bool
     {
-        return $this->storedPayload() !== null;
+        return $this->storedValue() !== null;
     }
 
-    private function storedPayload(): ?string
+    private function storedValue(): ?string
     {
         $value = $this->settings->get(self::SETTING_KEY);
 

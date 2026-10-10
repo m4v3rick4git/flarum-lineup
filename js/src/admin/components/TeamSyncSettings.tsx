@@ -3,8 +3,7 @@ import Component from 'flarum/common/Component';
 
 interface TeamSyncResult {
   success: boolean;
-  leagueId: number;
-  season: number;
+  provider: string;
   received: number;
   created: number;
   updated: number;

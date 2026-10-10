@@ -4,10 +4,14 @@ m4v3rick4git-lineup:
       create_lineup_label: Mannschaftsaufstellungen erstellen
 
     settings:
+      data_provider_label: Datenquelle
+      data_provider_help: Wähle, aus welcher Quelle Vereine, Kader, Logos und Spielerbilder synchronisiert werden. Änderungen zuerst über „Save Changes“ speichern.
       league_id_label: API-Football-Liga-ID
       league_id_help: Numerische Kennung der österreichischen Bundesliga bei API-Football.
       season_label: Saison
       season_help: Startjahr der Saison, das an API-Football übergeben wird.
+      bundesliga_at_title: Bundesliga.at
+      bundesliga_at_help: Verwendet die aktuellen Vereins- und Kaderdaten von bundesliga.at. Es ist kein API-Key erforderlich.
 
     api_key:
       title: API-Football-API-Key
@@ -15,16 +19,16 @@ m4v3rick4git-lineup:
       status_configured: API-Key konfiguriert
       status_missing: Kein API-Key konfiguriert
       status_error: Der API-Key-Status konnte nicht geladen werden.
-      source_database: Ein verschlüsselter API-Key ist in der Datenbank gespeichert.
+      source_database: Ein API-Key ist in der Datenbank gespeichert.
       source_none: Es ist keine API-Key-Quelle verfügbar.
       input_placeholder: Neuen API-Key eingeben
       save_button: API-Key speichern
       saving_button: Wird gespeichert...
-      saved_message: Der API-Key wurde verschlüsselt gespeichert.
+      saved_message: Der API-Key wurde gespeichert.
       save_error: Der API-Key konnte nicht gespeichert werden.
       delete_button: Gespeicherten API-Key löschen
       deleting_button: Wird gelöscht...
-      delete_confirm: Den verschlüsselt in der Datenbank gespeicherten API-Key löschen?
+      delete_confirm: Den in der Datenbank gespeicherten API-Key löschen?
       deleted_message: Der gespeicherte API-Key wurde gelöscht.
       delete_error: Der gespeicherte API-Key konnte nicht gelöscht werden.
       test_button: Verbindung testen
@@ -34,20 +38,43 @@ m4v3rick4git-lineup:
 
     team_sync:
       title: Vereinssynchronisierung
-      help: Liga-ID und Saison müssen vor der Synchronisierung über „Save Changes“ gespeichert werden.
+      help: Synchronisiert die aktuellen Vereine aus der ausgewählten Datenquelle. Änderungen an der Datenquelle zuerst über „Save Changes“ speichern.
       sync_button: Vereine synchronisieren
       syncing_button: Vereine werden synchronisiert...
       success_message: "Synchronisierung abgeschlossen. Empfangen: {received}; neu: {created}; aktualisiert: {updated}; deaktiviert: {deactivated}."
-      error_message: Die Vereinssynchronisierung ist fehlgeschlagen. API-Key, Liga-ID und Saison prüfen.
+      error_message: Die Vereinssynchronisierung ist fehlgeschlagen. Einstellungen und Flarum-Log prüfen.
 
     squad_sync:
       title: Kadersynchronisierung
-      help: Ruft die aktuellen Kader aller aktiven Vereine bei API-Football ab.
+      help: Ruft die aktuellen Kader aller aktiven Vereine aus der ausgewählten Datenquelle ab.
       sync_button: Kader synchronisieren
       syncing_button: Kader werden synchronisiert...
       progress_message: "Verein {completed} von {total}: {team}"
       success_message: "Kadersynchronisierung abgeschlossen. Vereine: {teams}; empfangen: {received}; neu: {created}; aktualisiert: {updated}; deaktiviert: {deactivated}."
       error_message: Die Kadersynchronisierung ist fehlgeschlagen. Details stehen im Flarum-Log.
+
+
+    auto_sync:
+      team_title: Automatische Vereinssynchronisierung
+      team_help: Führt die Vereinssynchronisierung nach einem eigenen Zeitplan aus. Der manuelle Button bleibt unabhängig davon verfügbar.
+      squad_title: Automatische Kadersynchronisierung
+      squad_help: Führt die Kadersynchronisierung nach einem eigenen Zeitplan aus. Der manuelle Button bleibt unabhängig davon verfügbar.
+      enabled_label: Automatisch synchronisieren
+      frequency_label: Häufigkeit
+      frequency_daily: Täglich
+      frequency_weekly: Wöchentlich
+      frequency_monthly: Monatlich
+      time_label: Uhrzeit
+      timezone_help: Die Uhrzeit wird in Europe/Vienna interpretiert.
+      weekday_label: Wochentag
+      month_day_label: Tag im Monat (1–28)
+      weekday_monday: Montag
+      weekday_tuesday: Dienstag
+      weekday_wednesday: Mittwoch
+      weekday_thursday: Donnerstag
+      weekday_friday: Freitag
+      weekday_saturday: Samstag
+      weekday_sunday: Sonntag
 
   forum:
     composer:

@@ -9,6 +9,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
@@ -17,10 +18,14 @@ final class ListPlayersController implements RequestHandlerInterface
 {
     private CachedImageAccess $cachedImageAccess;
 
+    private DataProviderResolver $dataProviderResolver;
+
     public function __construct(
-        CachedImageAccess $cachedImageAccess
+        CachedImageAccess $cachedImageAccess,
+        DataProviderResolver $dataProviderResolver
     ) {
         $this->cachedImageAccess = $cachedImageAccess;
+        $this->dataProviderResolver = $dataProviderResolver;
     }
 
     public function handle(
@@ -50,8 +55,13 @@ final class ListPlayersController implements RequestHandlerInterface
             );
         }
 
+        $providerKey = $this->dataProviderResolver
+            ->resolve()
+            ->providerKey();
+
         $team = Team::query()
             ->whereKey($teamId)
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->first();
 
@@ -65,6 +75,7 @@ final class ListPlayersController implements RequestHandlerInterface
 
         $players = Player::query()
             ->where('team_id', $team->id)
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->orderBy('position')
             ->orderBy('name')
@@ -77,8 +88,11 @@ final class ListPlayersController implements RequestHandlerInterface
                         'age' => $player->age,
                         'shirtNumber' => $player->shirt_number,
                         'position' => $player->position,
-                        'photoUrl' => $this->cachedImageAccess->playerPhotoUrl(
-                            (int) $player->provider_player_id
+                        'photoUrl' => (
+                            $this->cachedImageAccess->playerPhotoUrl(
+                                (string) $player->provider,
+                                (string) $player->provider_player_id
+                            )
                         ),
                     ];
                 }
@@ -91,8 +105,11 @@ final class ListPlayersController implements RequestHandlerInterface
                 'id' => (int) $team->id,
                 'name' => (string) $team->name,
                 'code' => $team->code,
-                'logoUrl' => $this->cachedImageAccess->teamLogoUrl(
-                    (int) $team->api_team_id
+                'logoUrl' => (
+                    $this->cachedImageAccess->teamLogoUrl(
+                        (string) $team->provider,
+                        (string) $team->provider_team_id
+                    )
                 ),
             ],
             'players' => $players,

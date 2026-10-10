@@ -83,8 +83,7 @@ final class SynchronizeTeamsController implements RequestHandlerInterface
 
         return new JsonResponse([
             'success' => true,
-            'leagueId' => $result['leagueId'],
-            'season' => $result['season'],
+            'provider' => $result['provider'],
             'received' => $result['received'],
             'created' => $result['created'],
             'updated' => $result['updated'],
