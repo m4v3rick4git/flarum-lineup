@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Image\GeneratedImageManager;
 use Wss\FlarumLineup\Image\ImageGenerationThrottledException;
@@ -27,6 +28,8 @@ final class CreateLineupImageController implements
 
     private CachedImageAccess $cachedImageAccess;
 
+    private DataProviderResolver $dataProviderResolver;
+
     private FormationCatalog $formationCatalog;
 
     private GeneratedImageManager $generatedImageManager;
@@ -38,6 +41,7 @@ final class CreateLineupImageController implements
     public function __construct(
         LineupImageRenderer $renderer,
         CachedImageAccess $cachedImageAccess,
+        DataProviderResolver $dataProviderResolver,
         FormationCatalog $formationCatalog,
         GeneratedImageManager $generatedImageManager,
         UrlGenerator $urlGenerator,
@@ -45,6 +49,7 @@ final class CreateLineupImageController implements
     ) {
         $this->renderer = $renderer;
         $this->cachedImageAccess = $cachedImageAccess;
+        $this->dataProviderResolver = $dataProviderResolver;
         $this->formationCatalog = $formationCatalog;
         $this->generatedImageManager = $generatedImageManager;
         $this->urlGenerator = $urlGenerator;
@@ -157,8 +162,13 @@ final class CreateLineupImageController implements
             );
         }
 
+        $providerKey = $this->dataProviderResolver
+            ->resolve()
+            ->providerKey();
+
         $team = Team::query()
             ->whereKey($teamId)
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->first();
 
@@ -172,6 +182,7 @@ final class CreateLineupImageController implements
 
         $playersById = Player::query()
             ->where('team_id', $team->id)
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->whereIn('id', $normalizedPlayerIds)
             ->get()
@@ -202,14 +213,18 @@ final class CreateLineupImageController implements
             $players[] = [
                 'name' => (string) $player->name,
                 'shirtNumber' => $player->shirt_number,
-                'photoUrl' => $this->cachedImageAccess->playerPhotoUrl(
-                    (int) $player->provider_player_id
+                'photoUrl' => (
+                    $this->cachedImageAccess->playerPhotoUrl(
+                        (string) $player->provider,
+                        (string) $player->provider_player_id
+                    )
                 ),
             ];
         }
 
         $teamLogoUrl = $this->cachedImageAccess->teamLogoUrl(
-            (int) $team->api_team_id
+            (string) $team->provider,
+            (string) $team->provider_team_id
         );
 
         try {

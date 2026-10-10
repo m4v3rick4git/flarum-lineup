@@ -37,42 +37,54 @@ final class RemoteImageCache implements
     }
 
     public function cacheTeamLogo(
-        int $apiTeamId,
+        string $provider,
+        string $providerTeamId,
         ?string $remoteUrl
     ): ?string {
         return $this->cache(
             'teams',
-            $apiTeamId,
+            $provider,
+            $providerTeamId,
             $remoteUrl
         );
     }
 
     public function cachePlayerPhoto(
-        int $apiPlayerId,
+        string $provider,
+        string $providerPlayerId,
         ?string $remoteUrl
     ): ?string {
         return $this->cache(
             'players',
-            $apiPlayerId,
+            $provider,
+            $providerPlayerId,
             $remoteUrl
         );
     }
 
     private function cache(
         string $type,
-        int $apiId,
+        string $provider,
+        string $providerId,
         ?string $remoteUrl
     ): ?string {
-        if ($apiId <= 0) {
+        if (
+            preg_match(
+                '#^[a-z0-9]+(?:-[a-z0-9]+)*$#',
+                $provider
+            ) !== 1
+            || $providerId === ''
+        ) {
             throw new InvalidArgumentException(
-                'A valid API image ID is required.'
+                'A valid provider image identity is required.'
             );
         }
 
         $relativePath = sprintf(
-            'assets/wss-lineup/cache/%s/%d.png',
+            'assets/wss-lineup/cache/%s/%s/%s.png',
             $type,
-            $apiId
+            $provider,
+            hash('sha256', $providerId)
         );
 
         $absolutePath =
@@ -107,7 +119,8 @@ final class RemoteImageCache implements
                     'WSS Lineup rejected an invalid cache path.',
                     [
                         'type' => $type,
-                        'apiId' => $apiId,
+                        'provider' => $provider,
+                        'providerId' => $providerId,
                     ]
                 );
 
@@ -134,7 +147,8 @@ final class RemoteImageCache implements
             $absolutePath,
             $relativePath,
             $type,
-            $apiId
+            $provider,
+            $providerId
         );
 
         return $cachedPath
@@ -150,7 +164,8 @@ final class RemoteImageCache implements
         string $absolutePath,
         string $relativePath,
         string $type,
-        int $apiId
+        string $provider,
+        string $providerId
     ): ?string {
         $temporaryPath = null;
 
@@ -223,7 +238,8 @@ final class RemoteImageCache implements
                 'WSS Lineup image caching failed.',
                 [
                     'type' => $type,
-                    'apiId' => $apiId,
+                    'provider' => $provider,
+                    'providerId' => $providerId,
                     'exceptionClass' => $exception::class,
                 ]
             );
@@ -266,6 +282,7 @@ final class RemoteImageCache implements
         return is_array($information)
             && ($information[2] ?? null) === IMAGETYPE_PNG;
     }
+
     private function isFreshCachedFile(
         string $absolutePath
     ): bool {
@@ -279,5 +296,4 @@ final class RemoteImageCache implements
             time() - self::MAX_AGE_SECONDS
         );
     }
-
 }

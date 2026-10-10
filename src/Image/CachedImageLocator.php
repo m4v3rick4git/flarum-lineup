@@ -43,20 +43,24 @@ final class CachedImageLocator implements CachedImageAccess
     }
 
     public function teamLogoUrl(
-        int $apiTeamId
+        string $provider,
+        string $providerTeamId
     ): ?string {
         return $this->urlFor(
             'teams',
-            $apiTeamId
+            $provider,
+            $providerTeamId
         );
     }
 
     public function playerPhotoUrl(
-        int $apiPlayerId
+        string $provider,
+        string $providerPlayerId
     ): ?string {
         return $this->urlFor(
             'players',
-            $apiPlayerId
+            $provider,
+            $providerPlayerId
         );
     }
 
@@ -105,17 +109,18 @@ final class CachedImageLocator implements CachedImageAccess
 
     private function urlFor(
         string $type,
-        int $apiId
+        string $provider,
+        string $providerId
     ): ?string {
-        if ($apiId <= 0) {
+        $relativePath = $this->cachePath(
+            $type,
+            $provider,
+            $providerId
+        );
+
+        if ($relativePath === null) {
             return null;
         }
-
-        $relativePath = sprintf(
-            'assets/wss-lineup/cache/%s/%d.png',
-            $type,
-            $apiId
-        );
 
         if (
             !$this->isValidCachedPng(
@@ -126,6 +131,37 @@ final class CachedImageLocator implements CachedImageAccess
         }
 
         return $this->baseUrl.'/'.$relativePath;
+    }
+
+    private function cachePath(
+        string $type,
+        string $provider,
+        string $providerId
+    ): ?string {
+        if (
+            !in_array(
+                $type,
+                [
+                    'teams',
+                    'players',
+                ],
+                true
+            )
+            || preg_match(
+                '#^[a-z0-9]+(?:-[a-z0-9]+)*$#',
+                $provider
+            ) !== 1
+            || $providerId === ''
+        ) {
+            return null;
+        }
+
+        return sprintf(
+            'assets/wss-lineup/cache/%s/%s/%s.png',
+            $type,
+            $provider,
+            hash('sha256', $providerId)
+        );
     }
 
     private function relativePathFromUrl(
@@ -151,7 +187,9 @@ final class CachedImageLocator implements CachedImageAccess
         if (
             !is_string($suffix)
             || preg_match(
-                '#^(teams|players)/[1-9][0-9]*\.png$#',
+                '#^(teams|players)/'
+                .'[a-z0-9]+(?:-[a-z0-9]+)*/'
+                .'[a-f0-9]{64}\.png$#',
                 $suffix
             ) !== 1
         ) {

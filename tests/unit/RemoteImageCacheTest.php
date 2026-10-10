@@ -13,6 +13,18 @@ use Wss\FlarumLineup\Image\RemoteImageSource;
 
 final class RemoteImageCacheTest extends TestCase
 {
+    private const PROVIDER = 'api-football';
+
+    private const TEAM_ID = '571';
+
+    private const PLAYER_ID = '1001';
+
+    private const TEAM_ID_HASH =
+        'f292c8c5c2fe9fd30ef1c632e6936edabe42f087e3cb50ceef0324b729383d82';
+
+    private const PLAYER_ID_HASH =
+        'fe675fe7aaee830b6fed09b64e034f84dcbdaeb429d9cccd4ebb90e15af8dd71';
+
     private string $publicPath;
 
     protected function setUp(): void
@@ -47,12 +59,15 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $relativePath = $cache->cacheTeamLogo(
-            571,
+            self::PROVIDER,
+            self::TEAM_ID,
             'https://media.api-sports.io/football/teams/571.png'
         );
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/571.png',
+            'assets/wss-lineup/cache/teams/api-football/'
+            .self::TEAM_ID_HASH
+            .'.png',
             $relativePath
         );
 
@@ -87,13 +102,16 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $relativePath = $cache->cacheTeamLogo(
-            571,
+            self::PROVIDER,
+            self::TEAM_ID,
             'https://media.api-sports.io/'
             .'football/teams/571.png'
         );
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/571.png',
+            'assets/wss-lineup/cache/teams/api-football/'
+            .self::TEAM_ID_HASH
+            .'.png',
             $relativePath
         );
 
@@ -137,19 +155,54 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $this->assertSame(
-            'assets/wss-lineup/cache/players/1001.png',
+            'assets/wss-lineup/cache/players/api-football/'
+            .self::PLAYER_ID_HASH
+            .'.png',
             $cache->cachePlayerPhoto(
-                1001,
-                'https://media.api-sports.io/football/players/1001.png'
+                self::PROVIDER,
+                self::PLAYER_ID,
+                'https://media.api-sports.io/'
+                .'football/players/1001.png'
+            )
+        );
+    }
+
+    public function testItSupportsNonNumericProviderIds(): void
+    {
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->once())
+            ->method('fetch')
+            ->willReturn($this->createImage());
+
+        $providerTeamId = 'SK-RBS';
+
+        $this->assertSame(
+            'assets/wss-lineup/cache/teams/bundesliga-at/'
+            .hash('sha256', $providerTeamId)
+            .'.png',
+            $this->cache($source)->cacheTeamLogo(
+                'bundesliga-at',
+                $providerTeamId,
+                'https://example.test/team-logo.png'
             )
         );
     }
 
     public function testItReusesAnExistingValidFile(): void
     {
+        $relativePath =
+            'assets/wss-lineup/cache/teams/api-football/'
+            .self::TEAM_ID_HASH
+            .'.png';
+
         $path =
             $this->publicPath
-            .'/assets/wss-lineup/cache/teams/571.png';
+            .'/'
+            .$relativePath;
 
         mkdir(dirname($path), 0775, true);
 
@@ -168,19 +221,27 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/571.png',
+            $relativePath,
             $cache->cacheTeamLogo(
-                571,
-                'https://media.api-sports.io/football/teams/571.png'
+                self::PROVIDER,
+                self::TEAM_ID,
+                'https://media.api-sports.io/'
+                .'football/teams/571.png'
             )
         );
     }
 
     public function testItRefreshesAStaleValidFile(): void
     {
+        $relativePath =
+            'assets/wss-lineup/cache/teams/api-football/'
+            .self::TEAM_ID_HASH
+            .'.png';
+
         $path =
             $this->publicPath
-            .'/assets/wss-lineup/cache/teams/571.png';
+            .'/'
+            .$relativePath;
 
         mkdir(dirname($path), 0775, true);
 
@@ -208,9 +269,10 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/571.png',
+            $relativePath,
             $cache->cacheTeamLogo(
-                571,
+                self::PROVIDER,
+                self::TEAM_ID,
                 'https://media.api-sports.io/'
                 .'football/teams/571.png'
             )
@@ -249,9 +311,15 @@ final class RemoteImageCacheTest extends TestCase
 
     public function testItKeepsAStaleFileWhenRefreshFails(): void
     {
+        $relativePath =
+            'assets/wss-lineup/cache/players/api-football/'
+            .self::PLAYER_ID_HASH
+            .'.png';
+
         $path =
             $this->publicPath
-            .'/assets/wss-lineup/cache/players/1001.png';
+            .'/'
+            .$relativePath;
 
         mkdir(dirname($path), 0775, true);
 
@@ -277,9 +345,10 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $this->assertSame(
-            'assets/wss-lineup/cache/players/1001.png',
+            $relativePath,
             $cache->cachePlayerPhoto(
-                1001,
+                self::PROVIDER,
+                self::PLAYER_ID,
                 'https://media.api-sports.io/'
                 .'football/players/1001.png'
             )
@@ -309,13 +378,15 @@ final class RemoteImageCacheTest extends TestCase
 
         $this->assertNull(
             $cache->cachePlayerPhoto(
-                1001,
-                'https://media.api-sports.io/football/players/1001.png'
+                self::PROVIDER,
+                self::PLAYER_ID,
+                'https://media.api-sports.io/'
+                .'football/players/1001.png'
             )
         );
     }
 
-    public function testItRejectsAnInvalidApiId(): void
+    public function testItRejectsAnInvalidProviderIdentity(): void
     {
         $source = $this->createMock(
             RemoteImageSource::class
@@ -328,7 +399,8 @@ final class RemoteImageCacheTest extends TestCase
         );
 
         $cache->cacheTeamLogo(
-            0,
+            '../api-football',
+            self::TEAM_ID,
             null
         );
     }

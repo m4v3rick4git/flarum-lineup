@@ -7,12 +7,14 @@ namespace Wss\FlarumLineup\Image;
 interface RemoteImageCacheService
 {
     public function cacheTeamLogo(
-        int $apiTeamId,
+        string $provider,
+        string $providerTeamId,
         ?string $remoteUrl
     ): ?string;
 
     public function cachePlayerPhoto(
-        int $apiPlayerId,
+        string $provider,
+        string $providerPlayerId,
         ?string $remoteUrl
     ): ?string;
 }

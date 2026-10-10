@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
- * @property int $api_team_id
+ * @property string $provider
+ * @property string $provider_team_id
  * @property string $name
  * @property string|null $code
  * @property string|null $country
@@ -26,7 +27,8 @@ final class Team extends AbstractModel
     protected $table = 'wss_lineup_teams';
 
     protected $fillable = [
-        'api_team_id',
+        'provider',
+        'provider_team_id',
         'name',
         'code',
         'country',
@@ -38,7 +40,6 @@ final class Team extends AbstractModel
     ];
 
     protected $casts = [
-        'api_team_id' => 'integer',
         'founded' => 'integer',
         'is_national' => 'boolean',
         'is_active' => 'boolean',

@@ -9,6 +9,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Model\Team;
 
@@ -16,10 +17,14 @@ final class ListTeamsController implements RequestHandlerInterface
 {
     private CachedImageAccess $cachedImageAccess;
 
+    private DataProviderResolver $dataProviderResolver;
+
     public function __construct(
-        CachedImageAccess $cachedImageAccess
+        CachedImageAccess $cachedImageAccess,
+        DataProviderResolver $dataProviderResolver
     ) {
         $this->cachedImageAccess = $cachedImageAccess;
+        $this->dataProviderResolver = $dataProviderResolver;
     }
 
     public function handle(
@@ -29,7 +34,12 @@ final class ListTeamsController implements RequestHandlerInterface
             'wss-lineup.createLineup'
         );
 
+        $providerKey = $this->dataProviderResolver
+            ->resolve()
+            ->providerKey();
+
         $teams = Team::query()
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->orderBy('name')
             ->get()
@@ -37,13 +47,21 @@ final class ListTeamsController implements RequestHandlerInterface
                 function (Team $team): array {
                     return [
                         'id' => (int) $team->id,
-                        'apiTeamId' => (int) $team->api_team_id,
+
+
+                        'provider' => (string) $team->provider,
+                        'providerTeamId' => (
+                            (string) $team->provider_team_id
+                        ),
                         'name' => (string) $team->name,
                         'code' => $team->code,
                         'country' => $team->country,
                         'founded' => $team->founded,
-                        'logoUrl' => $this->cachedImageAccess->teamLogoUrl(
-                            (int) $team->api_team_id
+                        'logoUrl' => (
+                            $this->cachedImageAccess->teamLogoUrl(
+                                (string) $team->provider,
+                                (string) $team->provider_team_id
+                            )
                         ),
                     ];
                 }

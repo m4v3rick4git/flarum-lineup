@@ -5,25 +5,15 @@ declare(strict_types=1);
 namespace Wss\FlarumLineup\Sync;
 
 use Carbon\Carbon;
-use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Database\ConnectionInterface;
 use InvalidArgumentException;
-use RuntimeException;
-use Wss\FlarumLineup\Api\ApiFootballClient;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Model\Team;
 
 final class TeamSynchronizer
 {
-    private const LEAGUE_ID_SETTING =
-        'wss-lineup.league_id';
-
-    private const SEASON_SETTING =
-        'wss-lineup.season';
-
-    private ApiFootballClient $apiFootballClient;
-
-    private SettingsRepositoryInterface $settings;
+    private DataProviderResolver $dataProviderResolver;
 
     private ConnectionInterface $database;
 
@@ -34,15 +24,13 @@ final class TeamSynchronizer
     private ?RemoteImageCacheService $remoteImageCache;
 
     public function __construct(
-        ApiFootballClient $apiFootballClient,
-        SettingsRepositoryInterface $settings,
+        DataProviderResolver $dataProviderResolver,
         ConnectionInterface $database,
         ?SyncSafetyGuard $syncSafetyGuard = null,
         ?SyncLockManager $syncLockManager = null,
         ?RemoteImageCacheService $remoteImageCache = null
     ) {
-        $this->apiFootballClient = $apiFootballClient;
-        $this->settings = $settings;
+        $this->dataProviderResolver = $dataProviderResolver;
         $this->database = $database;
         $this->syncSafetyGuard = $syncSafetyGuard
             ?? new SyncSafetyGuard();
@@ -53,8 +41,7 @@ final class TeamSynchronizer
 
     /**
      * @return array{
-     *     leagueId: int,
-     *     season: int,
+     *     provider: string,
      *     received: int,
      *     created: int,
      *     updated: int,
@@ -70,8 +57,7 @@ final class TeamSynchronizer
 
     /**
      * @return array{
-     *     leagueId: int,
-     *     season: int,
+     *     provider: string,
      *     received: int,
      *     created: int,
      *     updated: int,
@@ -80,28 +66,28 @@ final class TeamSynchronizer
      */
     private function synchronizeUnlocked(): array
     {
-        $leagueId = $this->readPositiveIntegerSetting(
-            self::LEAGUE_ID_SETTING,
-            'league ID'
-        );
+        $provider = $this->dataProviderResolver->resolve();
+        $providerKey = $provider->providerKey();
+        $teams = $provider->fetchTeams();
 
-        $season = $this->readPositiveIntegerSetting(
-            self::SEASON_SETTING,
-            'season'
-        );
-
-        if ($season < 1900 || $season > 2100) {
-            throw new InvalidArgumentException(
-                'The configured season is invalid.'
+        foreach ($teams as &$teamData) {
+            $providerTeamId = trim(
+                (string) $teamData['providerTeamId']
             );
+
+            if ($providerTeamId === '') {
+                throw new InvalidArgumentException(
+                    'A data provider returned an empty team ID.'
+                );
+            }
+
+            $teamData['providerTeamId'] = $providerTeamId;
         }
 
-        $teams = $this->apiFootballClient->fetchTeams(
-            $leagueId,
-            $season
-        );
+        unset($teamData);
 
         $existingActiveTeams = (int) Team::query()
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->count();
 
@@ -113,11 +99,11 @@ final class TeamSynchronizer
 
         if ($this->remoteImageCache !== null) {
             foreach ($teams as $teamData) {
-                $this->remoteImageCache
-                    ->cacheTeamLogo(
-                        $teamData['apiTeamId'],
-                        $teamData['logoUrl']
-                    );
+                $this->remoteImageCache->cacheTeamLogo(
+                    $providerKey,
+                    $teamData['providerTeamId'],
+                    $teamData['logoUrl']
+                );
             }
         }
 
@@ -126,25 +112,27 @@ final class TeamSynchronizer
         return $this->database->transaction(
             function () use (
                 $teams,
-                $leagueId,
-                $season,
+                $providerKey,
                 $now
             ): array {
                 $created = 0;
                 $updated = 0;
-                $apiTeamIds = [];
+                $providerTeamIds = [];
 
                 foreach ($teams as $teamData) {
-                    $apiTeamId = $teamData['apiTeamId'];
-                    $apiTeamIds[] = $apiTeamId;
+                    $providerTeamId = $teamData['providerTeamId'];
+                    $providerTeamIds[] = $providerTeamId;
 
                     $team = Team::query()->firstOrNew([
-                        'api_team_id' => $apiTeamId,
+                        'provider' => $providerKey,
+                        'provider_team_id' => $providerTeamId,
                     ]);
 
                     $wasRecentlyCreated = !$team->exists;
 
                     $team->fill([
+                        'provider' => $providerKey,
+                        'provider_team_id' => $providerTeamId,
                         'name' => $teamData['name'],
                         'code' => $teamData['code'],
                         'country' => $teamData['country'],
@@ -165,7 +153,8 @@ final class TeamSynchronizer
                 }
 
                 $deactivated = Team::query()
-                    ->whereNotIn('api_team_id', $apiTeamIds)
+                    ->where('provider', $providerKey)
+                    ->whereNotIn('provider_team_id', $providerTeamIds)
                     ->where('is_active', true)
                     ->update([
                         'is_active' => false,
@@ -173,8 +162,7 @@ final class TeamSynchronizer
                     ]);
 
                 return [
-                    'leagueId' => $leagueId,
-                    'season' => $season,
+                    'provider' => $providerKey,
                     'received' => count($teams),
                     'created' => $created,
                     'updated' => $updated,
@@ -182,40 +170,5 @@ final class TeamSynchronizer
                 ];
             }
         );
-    }
-
-    private function readPositiveIntegerSetting(
-        string $key,
-        string $label
-    ): int {
-        $value = $this->settings->get($key);
-
-        if (
-            !is_string($value) &&
-            !is_int($value)
-        ) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'The configured %s is missing.',
-                    $label
-                )
-            );
-        }
-
-        $value = filter_var(
-            $value,
-            FILTER_VALIDATE_INT
-        );
-
-        if ($value === false || $value <= 0) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'The configured %s is invalid.',
-                    $label
-                )
-            );
-        }
-
-        return $value;
     }
 }

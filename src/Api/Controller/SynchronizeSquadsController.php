@@ -52,6 +52,7 @@ final class SynchronizeSquadsController implements RequestHandlerInterface
 
         return new JsonResponse([
             'success' => true,
+            'provider' => $result['provider'],
             'teams' => $result['teams'],
             'received' => $result['received'],
             'created' => $result['created'],
@@ -104,7 +105,8 @@ final class SynchronizeSquadsController implements RequestHandlerInterface
             'success' => true,
             'teams' => 1,
             'teamId' => $result['teamId'],
-            'apiTeamId' => $result['apiTeamId'],
+            'provider' => $result['provider'],
+            'providerTeamId' => $result['providerTeamId'],
             'teamName' => $result['teamName'],
             'received' => $result['received'],
             'created' => $result['created'],

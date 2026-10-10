@@ -8,6 +8,7 @@ use Flarum\Console\AbstractCommand;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use Wss\FlarumLineup\Api\ApiFootballRequestException;
+use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Model\Team;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
 use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
@@ -20,16 +21,20 @@ final class SynchronizeSquadsCommand extends AbstractCommand
 
     private SquadSynchronizer $squadSynchronizer;
 
+    private DataProviderResolver $dataProviderResolver;
+
     private LoggerInterface $logger;
 
     private SyncLockManager $syncLockManager;
 
     public function __construct(
         SquadSynchronizer $squadSynchronizer,
+        DataProviderResolver $dataProviderResolver,
         LoggerInterface $logger,
         SyncLockManager $syncLockManager
     ) {
         $this->squadSynchronizer = $squadSynchronizer;
+        $this->dataProviderResolver = $dataProviderResolver;
         $this->logger = $logger;
         $this->syncLockManager = $syncLockManager;
 
@@ -41,7 +46,7 @@ final class SynchronizeSquadsCommand extends AbstractCommand
         $this
             ->setName('wss-lineup:sync-squads')
             ->setDescription(
-                'Synchronize active team squads from API-Football with rate limiting.'
+                'Synchronize active team squads from the selected data provider.'
             );
     }
 
@@ -66,7 +71,12 @@ final class SynchronizeSquadsCommand extends AbstractCommand
 
     private function runSynchronization(): int
     {
+        $providerKey = $this->dataProviderResolver
+            ->resolve()
+            ->providerKey();
+
         $teams = Team::query()
+            ->where('provider', $providerKey)
             ->where('is_active', true)
             ->orderBy('id')
             ->get();
@@ -172,7 +182,8 @@ final class SynchronizeSquadsCommand extends AbstractCommand
     /**
      * @return array{
      *     teamId: int,
-     *     apiTeamId: int,
+     *     provider: string,
+     *     providerTeamId: string,
      *     teamName: string,
      *     received: int,
      *     created: int,

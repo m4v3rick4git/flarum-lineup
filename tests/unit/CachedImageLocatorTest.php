@@ -11,6 +11,12 @@ use Wss\FlarumLineup\Image\CachedImageLocator;
 
 final class CachedImageLocatorTest extends TestCase
 {
+    private const TEAM_ID_HASH =
+        'f292c8c5c2fe9fd30ef1c632e6936edabe42f087e3cb50ceef0324b729383d82';
+
+    private const PLAYER_ID_HASH =
+        'fe675fe7aaee830b6fed09b64e034f84dcbdaeb429d9cccd4ebb90e15af8dd71';
+
     private string $publicPath;
 
     protected function setUp(): void
@@ -30,29 +36,59 @@ final class CachedImageLocatorTest extends TestCase
 
     public function testItReturnsALocalTeamLogoUrl(): void
     {
-        $this->createPng(
-            'assets/wss-lineup/cache/teams/571.png'
-        );
+        $relativePath =
+            'assets/wss-lineup/cache/teams/api-football/'
+            .self::TEAM_ID_HASH
+            .'.png';
+
+        $this->createPng($relativePath);
 
         $locator = $this->locator();
 
         $this->assertSame(
-            'https://forum.example.test/'
-            .'assets/wss-lineup/cache/teams/571.png',
-            $locator->teamLogoUrl(571)
+            'https://forum.example.test/'.$relativePath,
+            $locator->teamLogoUrl(
+                'api-football',
+                '571'
+            )
         );
     }
 
     public function testItReturnsALocalPlayerPhotoUrl(): void
     {
-        $this->createPng(
-            'assets/wss-lineup/cache/players/1001.png'
-        );
+        $relativePath =
+            'assets/wss-lineup/cache/players/api-football/'
+            .self::PLAYER_ID_HASH
+            .'.png';
+
+        $this->createPng($relativePath);
 
         $this->assertSame(
-            'https://forum.example.test/'
-            .'assets/wss-lineup/cache/players/1001.png',
-            $this->locator()->playerPhotoUrl(1001)
+            'https://forum.example.test/'.$relativePath,
+            $this->locator()->playerPhotoUrl(
+                'api-football',
+                '1001'
+            )
+        );
+    }
+
+    public function testItSupportsNonNumericProviderIds(): void
+    {
+        $providerTeamId = 'SK-RBS';
+
+        $relativePath =
+            'assets/wss-lineup/cache/teams/bundesliga-at/'
+            .hash('sha256', $providerTeamId)
+            .'.png';
+
+        $this->createPng($relativePath);
+
+        $this->assertSame(
+            'https://forum.example.test/'.$relativePath,
+            $this->locator()->teamLogoUrl(
+                'bundesliga-at',
+                $providerTeamId
+            )
         );
     }
 
@@ -61,25 +97,34 @@ final class CachedImageLocatorTest extends TestCase
         $locator = $this->locator();
 
         $this->assertNull(
-            $locator->teamLogoUrl(571)
+            $locator->teamLogoUrl(
+                'api-football',
+                '571'
+            )
         );
 
         $this->assertNull(
-            $locator->playerPhotoUrl(1001)
+            $locator->playerPhotoUrl(
+                'api-football',
+                '1001'
+            )
         );
     }
 
     public function testItLoadsOnlyItsOwnCachedImages(): void
     {
-        $this->createPng(
-            'assets/wss-lineup/cache/players/1001.png'
-        );
+        $relativePath =
+            'assets/wss-lineup/cache/players/api-football/'
+            .self::PLAYER_ID_HASH
+            .'.png';
+
+        $this->createPng($relativePath);
 
         $locator = $this->locator();
 
         $image = $locator->load(
             'https://forum.example.test/'
-            .'assets/wss-lineup/cache/players/1001.png'
+            .$relativePath
         );
 
         $this->assertInstanceOf(
@@ -100,7 +145,10 @@ final class CachedImageLocatorTest extends TestCase
             $locator->load(
                 'https://forum.example.test/'
                 .'assets/wss-lineup/cache/'
-                .'players/../teams/571.png'
+                .'players/api-football/../'
+                .'teams/'
+                .self::TEAM_ID_HASH
+                .'.png'
             )
         );
     }

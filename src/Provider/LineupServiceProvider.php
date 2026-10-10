@@ -42,7 +42,6 @@ final class LineupServiceProvider extends AbstractServiceProvider
 {
     public function register(): void
     {
-
         $this->container->singleton(
             ApiKeyStore::class,
             function (Container $container): ApiKeyStore {
@@ -316,9 +315,8 @@ final class LineupServiceProvider extends AbstractServiceProvider
             TeamSynchronizer::class,
             function (Container $container): TeamSynchronizer {
                 return new TeamSynchronizer(
-                    $container->make(ApiFootballClient::class),
                     $container->make(
-                        SettingsRepositoryInterface::class
+                        DataProviderResolver::class
                     ),
                     $container->make(ConnectionInterface::class),
                     $container->make(SyncSafetyGuard::class),
@@ -334,7 +332,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
             SquadSynchronizer::class,
             function (Container $container): SquadSynchronizer {
                 return new SquadSynchronizer(
-                    $container->make(ApiFootballClient::class),
+                    $container->make(
+                        DataProviderResolver::class
+                    ),
                     $container->make(ConnectionInterface::class),
                     $container->make(SyncSafetyGuard::class),
                     $container->make(SyncLockManager::class),
