@@ -15,9 +15,15 @@ use Psr\Log\LoggerInterface;
 use Wss\FlarumLineup\Api\ApiFootballClient;
 use Wss\FlarumLineup\Api\ApiKeyStore;
 use Wss\FlarumLineup\DataProvider\ApiFootballProvider;
+use Wss\FlarumLineup\DataProvider\BundesligaAtHttpClient;
+use Wss\FlarumLineup\DataProvider\BundesligaAtParser;
+use Wss\FlarumLineup\DataProvider\BundesligaAtProvider;
+use Wss\FlarumLineup\DataProvider\BundesligaAtSource;
 use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
+use Wss\FlarumLineup\Image\BundesligaAtImageFetcher;
 use Wss\FlarumLineup\Image\CachedImageLocator;
+use Wss\FlarumLineup\Image\CompositeRemoteImageSource;
 use Wss\FlarumLineup\Image\EloquentGeneratedImageCleanupRepository;
 use Wss\FlarumLineup\Image\GeneratedImageClaimManager;
 use Wss\FlarumLineup\Image\GeneratedImageClaimService;
@@ -33,6 +39,8 @@ use Wss\FlarumLineup\Image\RemoteImageCacheService;
 use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Image\RemoteImageSource;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
+use Wss\FlarumLineup\Scheduling\SyncScheduleManager;
+use Wss\FlarumLineup\Sync\SquadSynchronizationRunner;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
 use Wss\FlarumLineup\Sync\SyncLockManager;
 use Wss\FlarumLineup\Sync\SyncSafetyGuard;
@@ -89,6 +97,68 @@ final class LineupServiceProvider extends AbstractServiceProvider
         );
 
         $this->container->singleton(
+            BundesligaAtHttpClient::class,
+            static function (
+                Container $container
+            ): BundesligaAtHttpClient {
+                return new BundesligaAtHttpClient(
+                    new Client([
+                        'base_uri' => 'https://www.bundesliga.at',
+                        'connect_timeout' => 5.0,
+                        'timeout' => 12.0,
+                        'http_errors' => false,
+                        'allow_redirects' => false,
+                        'headers' => [
+                            'Accept' => (
+                                'text/html,application/xhtml+xml'
+                            ),
+                            'User-Agent' => 'WSS-Lineup/0.2',
+                        ],
+                    ])
+                );
+            }
+        );
+
+        $this->container->singleton(
+            BundesligaAtSource::class,
+            static function (
+                Container $container
+            ): BundesligaAtSource {
+                return $container->make(
+                    BundesligaAtHttpClient::class
+                );
+            }
+        );
+
+        $this->container->singleton(
+            BundesligaAtParser::class,
+            static function (
+                Container $container
+            ): BundesligaAtParser {
+                return new BundesligaAtParser();
+            }
+        );
+
+        $this->container->singleton(
+            BundesligaAtProvider::class,
+            function (
+                Container $container
+            ): BundesligaAtProvider {
+                return new BundesligaAtProvider(
+                    $container->make(
+                        BundesligaAtSource::class
+                    ),
+                    $container->make(
+                        BundesligaAtParser::class
+                    ),
+                    $container->make(
+                        SettingsRepositoryInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
             DataProviderResolver::class,
             function (Container $container): DataProviderResolver {
                 return new DataProviderResolver(
@@ -98,6 +168,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     [
                         $container->make(
                             ApiFootballProvider::class
+                        ),
+                        $container->make(
+                            BundesligaAtProvider::class
                         ),
                     ]
                 );
@@ -128,13 +201,48 @@ final class LineupServiceProvider extends AbstractServiceProvider
                 );
             }
         );
+
+        $this->container->singleton(
+            BundesligaAtImageFetcher::class,
+            static function (
+                Container $container
+            ): BundesligaAtImageFetcher {
+                return new BundesligaAtImageFetcher(
+                    new Client([
+                        'connect_timeout' => 3.0,
+                        'timeout' => 5.0,
+                        'http_errors' => false,
+                        'allow_redirects' => false,
+                    ])
+                );
+            }
+        );
+
+        $this->container->singleton(
+            CompositeRemoteImageSource::class,
+            function (
+                Container $container
+            ): CompositeRemoteImageSource {
+                return new CompositeRemoteImageSource(
+                    [
+                        $container->make(
+                            RemoteImageFetcher::class
+                        ),
+                        $container->make(
+                            BundesligaAtImageFetcher::class
+                        ),
+                    ]
+                );
+            }
+        );
+
         $this->container->singleton(
             RemoteImageSource::class,
             static function (
                 Container $container
             ): RemoteImageSource {
                 return $container->make(
-                    RemoteImageFetcher::class
+                    CompositeRemoteImageSource::class
                 );
             }
         );
@@ -340,6 +448,38 @@ final class LineupServiceProvider extends AbstractServiceProvider
                     $container->make(SyncLockManager::class),
                     $container->make(
                         RemoteImageCacheService::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            SyncScheduleManager::class,
+            function (
+                Container $container
+            ): SyncScheduleManager {
+                return new SyncScheduleManager(
+                    $container->make(
+                        SettingsRepositoryInterface::class
+                    )
+                );
+            }
+        );
+
+        $this->container->singleton(
+            SquadSynchronizationRunner::class,
+            function (
+                Container $container
+            ): SquadSynchronizationRunner {
+                return new SquadSynchronizationRunner(
+                    $container->make(
+                        SquadSynchronizer::class
+                    ),
+                    $container->make(
+                        DataProviderResolver::class
+                    ),
+                    $container->make(
+                        LoggerInterface::class
                     )
                 );
             }

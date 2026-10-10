@@ -4,6 +4,7 @@ import Component from 'flarum/common/Component';
 interface Team {
   id: number;
   name: string;
+  provider: string;
 }
 
 interface TeamListResponse {
@@ -114,6 +115,9 @@ export default class SquadSyncSettings extends Component {
       }
 
       this.totalTeams = teams.length;
+
+      const requestDelayMilliseconds = teams[0]?.provider === 'api-football' ? 8000 : 1000;
+
       m.redraw();
 
       for (const [index, team] of teams.entries()) {
@@ -133,7 +137,7 @@ export default class SquadSyncSettings extends Component {
         m.redraw();
 
         if (index < teams.length - 1) {
-          await this.delay(8000);
+          await this.delay(requestDelayMilliseconds);
         }
       }
 

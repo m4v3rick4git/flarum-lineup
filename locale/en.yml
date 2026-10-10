@@ -4,10 +4,14 @@ m4v3rick4git-lineup:
       create_lineup_label: Create team lineups
 
     settings:
+      data_provider_label: Data source
+      data_provider_help: Select the source used to synchronize teams, squads, team logos and player photos. Save changes before running a synchronization.
       league_id_label: API-Football league ID
       league_id_help: Numeric identifier of the Austrian Bundesliga in API-Football.
       season_label: Season
       season_help: Starting year of the season used by API-Football.
+      bundesliga_at_title: Bundesliga.at
+      bundesliga_at_help: Uses the current club and squad data from bundesliga.at. No API key is required.
 
     api_key:
       title: API-Football API key
@@ -24,7 +28,7 @@ m4v3rick4git-lineup:
       save_error: The API key could not be saved.
       delete_button: Delete stored API key
       deleting_button: Deleting...
-      delete_confirm: Delete the encrypted API key stored in the database?
+      delete_confirm: Delete the API key stored in the database?
       deleted_message: The stored API key was deleted.
       delete_error: The stored API key could not be deleted.
       test_button: Test connection
@@ -34,20 +38,43 @@ m4v3rick4git-lineup:
 
     team_sync:
       title: Team synchronization
-      help: Save the league ID and season settings before starting the synchronization.
+      help: Synchronizes the current teams from the selected data source. Save data-source changes before starting the synchronization.
       sync_button: Synchronize teams
       syncing_button: Synchronizing...
       success_message: "Synchronization completed. Received: {received}; created: {created}; updated: {updated}; deactivated: {deactivated}."
-      error_message: Team synchronization failed. Check the API key, league ID and season.
+      error_message: Team synchronization failed. Check the settings and the Flarum log.
 
     squad_sync:
       title: Squad synchronization
-      help: Retrieves the current squads for all active teams from API-Football.
+      help: Retrieves the current squads for all active teams from the selected data source.
       sync_button: Synchronize squads
       syncing_button: Synchronizing squads...
       progress_message: "Team {completed} of {total}: {team}"
       success_message: "Squad synchronization completed. Teams: {teams}; received: {received}; created: {created}; updated: {updated}; deactivated: {deactivated}."
       error_message: Squad synchronization failed. Details are available in the Flarum log.
+
+
+    auto_sync:
+      team_title: Automatic team synchronization
+      team_help: Runs team synchronization on its own schedule. The manual synchronization button remains available independently.
+      squad_title: Automatic squad synchronization
+      squad_help: Runs squad synchronization on its own schedule. The manual synchronization button remains available independently.
+      enabled_label: Synchronize automatically
+      frequency_label: Frequency
+      frequency_daily: Daily
+      frequency_weekly: Weekly
+      frequency_monthly: Monthly
+      time_label: Time
+      timezone_help: The time is interpreted in Europe/Vienna.
+      weekday_label: Weekday
+      month_day_label: Day of month (1–28)
+      weekday_monday: Monday
+      weekday_tuesday: Tuesday
+      weekday_wednesday: Wednesday
+      weekday_thursday: Thursday
+      weekday_friday: Friday
+      weekday_saturday: Saturday
+      weekday_sunday: Sunday
 
   forum:
     composer:

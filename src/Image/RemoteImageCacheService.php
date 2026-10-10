@@ -9,12 +9,14 @@ interface RemoteImageCacheService
     public function cacheTeamLogo(
         string $provider,
         string $providerTeamId,
-        ?string $remoteUrl
+        ?string $remoteUrl,
+        bool $forceRefresh = false
     ): ?string;
 
     public function cachePlayerPhoto(
         string $provider,
         string $providerPlayerId,
-        ?string $remoteUrl
+        ?string $remoteUrl,
+        bool $forceRefresh = false
     ): ?string;
 }

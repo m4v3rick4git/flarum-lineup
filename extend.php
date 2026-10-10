@@ -26,7 +26,9 @@ use Wss\FlarumLineup\Api\Controller\SynchronizeSquadsController;
 use Wss\FlarumLineup\Api\Controller\SynchronizeTeamsController;
 use Wss\FlarumLineup\Api\Controller\TestApiKeyController;
 use Wss\FlarumLineup\Api\Controller\ShowApiKeyStatusController;
+use Wss\FlarumLineup\Console\AutomaticSynchronizeCommand;
 use Wss\FlarumLineup\Console\CleanupGeneratedImagesCommand;
+use Wss\FlarumLineup\Console\RefreshBundesligaPlayerImagesCommand;
 use Wss\FlarumLineup\Console\SynchronizeSquadsCommand;
 use Wss\FlarumLineup\Console\SynchronizeTeamsCommand;
 use Wss\FlarumLineup\Listener\HandleDeletedGeneratedImages;
@@ -82,7 +84,9 @@ return [
             DeleteApiKeyController::class
         ),
     (new Extend\Console())
+        ->command(AutomaticSynchronizeCommand::class)
         ->command(CleanupGeneratedImagesCommand::class)
+        ->command(RefreshBundesligaPlayerImagesCommand::class)
         ->command(SynchronizeTeamsCommand::class)
         ->command(SynchronizeSquadsCommand::class)
         ->schedule(
@@ -95,19 +99,10 @@ return [
             }
         )
         ->schedule(
-            SynchronizeTeamsCommand::class,
+            AutomaticSynchronizeCommand::class,
             function (Event $event): void {
                 $event
-                    ->dailyAt('23:55')
-                    ->timezone('Europe/Vienna')
-                    ->withoutOverlapping(10);
-            }
-        )
-        ->schedule(
-            SynchronizeSquadsCommand::class,
-            function (Event $event): void {
-                $event
-                    ->cron('0 0,8,16 * * *')
+                    ->everyMinute()
                     ->timezone('Europe/Vienna')
                     ->withoutOverlapping(30);
             }

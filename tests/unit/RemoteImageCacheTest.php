@@ -405,6 +405,341 @@ final class RemoteImageCacheTest extends TestCase
         );
     }
 
+
+    public function testForceRefreshBypassesFreshCache(): void
+    {
+        $relativePath =
+            'assets/wss-lineup/cache/players/api-football/'
+            .self::PLAYER_ID_HASH
+            .'.png';
+
+        $path = $this->publicPath.'/'.$relativePath;
+
+        mkdir(dirname($path), 0775, true);
+
+        $oldImage = $this->createImage();
+        imagepng($oldImage, $path);
+        imagedestroy($oldImage);
+
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->once())
+            ->method('fetch')
+            ->willReturn(
+                $this->createTransparentImage()
+            );
+
+        $cache = $this->cache($source);
+
+        $this->assertSame(
+            $relativePath,
+            $cache->cachePlayerPhoto(
+                self::PROVIDER,
+                self::PLAYER_ID,
+                'https://media.api-sports.io/'
+                .'football/players/1001.png',
+                true
+            )
+        );
+
+        $cachedImage = imagecreatefrompng($path);
+
+        $this->assertInstanceOf(
+            GdImage::class,
+            $cachedImage
+        );
+
+        $pixel = imagecolorat(
+            $cachedImage,
+            0,
+            0
+        );
+
+        $this->assertSame(
+            127,
+            ($pixel >> 24) & 0x7f
+        );
+
+        imagedestroy($cachedImage);
+    }
+
+    public function testBundesligaAtPlayerPortraitUsesTopBiasedSquareCrop(): void
+    {
+        $portrait = imagecreatetruecolor(100, 200);
+
+        $this->assertInstanceOf(
+            GdImage::class,
+            $portrait
+        );
+
+        $red = imagecolorallocate(
+            $portrait,
+            255,
+            0,
+            0
+        );
+
+        $blue = imagecolorallocate(
+            $portrait,
+            0,
+            0,
+            255
+        );
+
+        imagefilledrectangle(
+            $portrait,
+            0,
+            0,
+            99,
+            119,
+            $red
+        );
+
+        imagefilledrectangle(
+            $portrait,
+            0,
+            120,
+            99,
+            199,
+            $blue
+        );
+
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->once())
+            ->method('fetch')
+            ->willReturn($portrait);
+
+        $relativePath = $this->cache($source)
+            ->cachePlayerPhoto(
+                'bundesliga-at',
+                '65754',
+                'https://example.test/player.png'
+            );
+
+        $this->assertIsString($relativePath);
+
+        $cachedImage = imagecreatefrompng(
+            $this->publicPath.'/'.$relativePath
+        );
+
+        $this->assertInstanceOf(
+            GdImage::class,
+            $cachedImage
+        );
+
+        $this->assertSame(
+            100,
+            imagesx($cachedImage)
+        );
+
+        $this->assertSame(
+            100,
+            imagesy($cachedImage)
+        );
+
+        $bottomPixel = imagecolorsforindex(
+            $cachedImage,
+            imagecolorat(
+                $cachedImage,
+                50,
+                99
+            )
+        );
+
+        $this->assertGreaterThan(
+            200,
+            $bottomPixel['red']
+        );
+
+        $this->assertLessThan(
+            50,
+            $bottomPixel['blue']
+        );
+
+        imagedestroy($cachedImage);
+    }
+
+    public function testBundesligaAtBrokenRemotePhotoUsesLocalPlaceholder(): void
+    {
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(
+                'https://example.test/missing-player.jpg'
+            )
+            ->willReturn(null);
+
+        $relativePath = $this->cache($source)
+            ->cachePlayerPhoto(
+                'bundesliga-at',
+                '65685',
+                'https://example.test/missing-player.jpg',
+                true
+            );
+
+        $this->assertIsString($relativePath);
+
+        $path =
+            $this->publicPath
+            .'/'
+            .$relativePath;
+
+        $this->assertFileExists($path);
+
+        $information = getimagesize($path);
+
+        $this->assertIsArray($information);
+
+        $this->assertSame(
+            512,
+            $information[0]
+        );
+
+        $this->assertSame(
+            512,
+            $information[1]
+        );
+
+        $this->assertSame(
+            IMAGETYPE_PNG,
+            $information[2]
+        );
+    }
+    public function testApiFootballPlayerPortraitKeepsOriginalAspectRatio(): void
+    {
+        $portrait = imagecreatetruecolor(100, 200);
+
+        $this->assertInstanceOf(
+            GdImage::class,
+            $portrait
+        );
+
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->once())
+            ->method('fetch')
+            ->willReturn($portrait);
+
+        $relativePath = $this->cache($source)
+            ->cachePlayerPhoto(
+                'api-football',
+                '1001',
+                'https://example.test/player.png'
+            );
+
+        $this->assertIsString($relativePath);
+
+        $information = getimagesize(
+            $this->publicPath.'/'.$relativePath
+        );
+
+        $this->assertIsArray($information);
+        $this->assertSame(100, $information[0]);
+        $this->assertSame(200, $information[1]);
+    }
+
+    public function testBundesligaAtMissingPhotoUsesLocalPlaceholder(): void
+    {
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->never())
+            ->method('fetch');
+
+        $relativePath = $this->cache($source)
+            ->cachePlayerPhoto(
+                'bundesliga-at',
+                '67999',
+                null,
+                true
+            );
+
+        $this->assertIsString($relativePath);
+
+        $path = $this->publicPath.'/'.$relativePath;
+
+        $this->assertFileExists($path);
+
+        $information = getimagesize($path);
+
+        $this->assertIsArray($information);
+        $this->assertSame(512, $information[0]);
+        $this->assertSame(512, $information[1]);
+        $this->assertSame(
+            IMAGETYPE_PNG,
+            $information[2]
+        );
+    }
+
+    public function testBundesligaAtOfficialPlaceholderUsesLocalPlaceholder(): void
+    {
+        $source = $this->createMock(
+            RemoteImageSource::class
+        );
+
+        $source
+            ->expects($this->never())
+            ->method('fetch');
+
+        $relativePath = $this->cache($source)
+            ->cachePlayerPhoto(
+                'bundesliga-at',
+                '68000',
+                'https://www.bundesliga.at/_next/image'
+                .'?url=%2Ficons%2Fportrait_placeholder.png'
+                .'&w=128&q=75',
+                true
+            );
+
+        $this->assertIsString($relativePath);
+
+        $path = $this->publicPath.'/'.$relativePath;
+
+        $this->assertFileExists($path);
+
+        $image = imagecreatefrompng($path);
+
+        $this->assertInstanceOf(
+            GdImage::class,
+            $image
+        );
+
+        $this->assertSame(512, imagesx($image));
+        $this->assertSame(512, imagesy($image));
+
+        $center = imagecolorsforindex(
+            $image,
+            imagecolorat(
+                $image,
+                256,
+                174
+            )
+        );
+
+        $this->assertLessThan(
+            150,
+            $center['red']
+        );
+
+        imagedestroy($image);
+    }
+
     private function cache(
         RemoteImageSource $source
     ): RemoteImageCache {
