@@ -324,7 +324,7 @@ final class LineupImageRenderer
 
         $width = $right - $left;
         $height = $bottom - $top;
-        $stripeWidth = (int) ($width / 10);
+        $stripeHeight = (int) ($height / 10);
 
         imagefilledrectangle(
             $image,
@@ -342,13 +342,13 @@ final class LineupImageRenderer
 
             imagefilledrectangle(
                 $image,
-                $left + ($index * $stripeWidth),
-                $top,
+                $left,
+                $top + ($index * $stripeHeight),
+                $right,
                 min(
-                    $right,
-                    $left + (($index + 1) * $stripeWidth)
+                    $bottom,
+                    $top + (($index + 1) * $stripeHeight)
                 ),
-                $bottom,
                 $colors['pitchDark']
             );
         }
