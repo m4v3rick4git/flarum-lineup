@@ -94,8 +94,8 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
         )}
 
         {this.selectedTeam && (
-          <section className="LineupSquad">
-            <header className="LineupSquad-header">
+          <section className="LineupSquad" id="wss-lineup-squad">
+            <header className="LineupSquad-header" id="wss-lineup-squad-header">
               <div>
                 <h3>{this.selectedTeam.name}</h3>
 
@@ -227,7 +227,31 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
     } finally {
       this.loadingPlayers = false;
       m.redraw();
+
+      if (!this.playersFailed && this.players.length > 0) {
+        this.scrollToSquadHeader();
+      } else {
+        this.scrollToSquad();
+      }
     }
+  }
+
+  private scrollToSquadHeader(): void {
+    window.requestAnimationFrame(() => {
+      document.getElementById('wss-lineup-squad-header')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+
+  private scrollToSquad(): void {
+    window.requestAnimationFrame(() => {
+      document.getElementById('wss-lineup-squad')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
   }
 
   private isPlayerSelected(playerId: number): boolean {
