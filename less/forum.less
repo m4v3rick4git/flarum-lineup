@@ -271,7 +271,7 @@ button.LineupPlayer:disabled {
   border: 4px solid #eff8ec;
   background:
     repeating-linear-gradient(
-      90deg,
+      180deg,
       rgba(255, 255, 255, 0.035) 0,
       rgba(255, 255, 255, 0.035) 10%,
       rgba(0, 0, 0, 0.025) 10%,
@@ -440,6 +440,36 @@ button.LineupPlayer:disabled {
     width: 100px;
     height: 100px;
   }
+
+  .LineupModal .LineupPitch {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .LineupModal .LineupPitch-field {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    box-sizing: border-box;
+  }
+
+  .LineupModal .LineupPitch-player {
+    width: 20%;
+    max-width: 82px;
+  }
+
+  .LineupModal .LineupPitch-player > strong {
+    max-width: 100%;
+  }
+
+  .LineupModal .LineupPitch-player[style*="left: 9%"],
+  .LineupModal .LineupPitch-player[style*="left: 91%"] {
+    width: 17%;
+    max-width: 56px;
+  }
 }
 
 .LineupPitch-formationSelect {
@@ -515,4 +545,3 @@ button.LineupPitch-player:focus-visible
   margin-top: 24px;
   justify-content: center;
 }
-
