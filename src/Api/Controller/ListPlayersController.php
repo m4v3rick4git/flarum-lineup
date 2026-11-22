@@ -13,6 +13,7 @@ use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
+use Wss\FlarumLineup\Lineup\DisplayName;
 
 final class ListPlayersController implements RequestHandlerInterface
 {
@@ -85,6 +86,7 @@ final class ListPlayersController implements RequestHandlerInterface
                     return [
                         'id' => (int) $player->id,
                         'name' => (string) $player->name,
+                        'displayName' => DisplayName::fromFullName((string) $player->name),
                         'age' => $player->age,
                         'shirtNumber' => $player->shirt_number,
                         'position' => $player->position,

@@ -38,7 +38,7 @@ final class RefreshBundesligaPlayerImagesCommand extends AbstractCommand
             );
     }
 
-    protected function fire()
+    protected function fire(): int
     {
         $players = Player::query()
             ->where('provider', self::PROVIDER)

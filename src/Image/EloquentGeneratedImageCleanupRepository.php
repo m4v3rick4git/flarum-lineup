@@ -20,6 +20,7 @@ final class EloquentGeneratedImageCleanupRepository implements
     ): array {
         return GeneratedImage::query()
             ->where('id', '>', $afterId)
+            ->where('relative_path', 'like', 'assets/wss-lineup-2/%')
             ->whereNull('post_id')
             ->whereIn(
                 'status',

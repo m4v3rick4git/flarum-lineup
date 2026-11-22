@@ -22,7 +22,7 @@ export default class TeamSyncSettings extends Component {
 
         <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.team_sync.help')}</p>
 
-        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={() => void this.synchronize()}>
+        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={(): void => void this.synchronize()}>
           {app.translator.trans(
             this.syncing ? 'm4v3rick4git-lineup.admin.team_sync.syncing_button' : 'm4v3rick4git-lineup.admin.team_sync.sync_button'
           )}

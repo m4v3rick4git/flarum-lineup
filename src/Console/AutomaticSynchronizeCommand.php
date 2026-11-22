@@ -46,7 +46,7 @@ final class AutomaticSynchronizeCommand extends AbstractCommand
             );
     }
 
-    protected function fire()
+    protected function fire(): int
     {
         $failed = 0;
 

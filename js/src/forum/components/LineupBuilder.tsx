@@ -15,6 +15,7 @@ export interface Team {
 export interface Player {
   id: number;
   name: string;
+  displayName: string;
   age: number | null;
   shirtNumber: number | null;
   position: string | null;
@@ -81,7 +82,7 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
                 className={['LineupTeamCard', this.selectedTeam?.id === team.id ? 'is-selected' : ''].join(' ')}
                 type="button"
                 key={team.id}
-                onclick={() => void this.selectTeam(team)}
+                onclick={(): void => void this.selectTeam(team)}
               >
                 {team.logoUrl && <img className="LineupTeamCard-logo" src={team.logoUrl} alt="" />}
 
@@ -155,7 +156,7 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
             )}
 
             {this.selectedPlayerIds.length === 11 && (
-              <>
+              <div className="LineupBuilder-preview">
                 {LineupPitch.component({
                   team: this.selectedTeam,
                   players: this.getSelectedPlayers(),
@@ -174,14 +175,14 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
                     icon="fas fa-image"
                     loading={this.generating}
                     disabled={this.generating}
-                    onclick={() => void this.generateImage()}
+                    onclick={(): void => void this.generateImage()}
                   >
                     {this.generating
                       ? app.translator.trans('m4v3rick4git-lineup.forum.lineup.generating_button')
                       : app.translator.trans('m4v3rick4git-lineup.forum.lineup.generate_button')}
                   </Button>
                 </div>
-              </>
+              </div>
             )}
           </section>
         )}

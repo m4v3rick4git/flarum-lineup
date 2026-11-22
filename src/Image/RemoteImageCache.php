@@ -94,7 +94,7 @@ final class RemoteImageCache implements
         }
 
         $relativePath = sprintf(
-            'assets/wss-lineup/cache/%s/%s/%s.png',
+            'assets/wss-lineup-2/cache/%s/%s/%s.png',
             $type,
             $provider,
             hash('sha256', $providerId)

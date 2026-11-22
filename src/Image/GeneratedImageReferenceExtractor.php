@@ -7,7 +7,7 @@ namespace Wss\FlarumLineup\Image;
 final class GeneratedImageReferenceExtractor
 {
     private const PATTERN = <<<'REGEX'
-~(?:https?://[^\s<>()"']+)?/assets/wss-lineup/([a-f0-9]{40}\.png)(?:[?#][^\s<>()"']*)?~i
+~(?:https?://[^\s<>()"']+)?/assets/wss-lineup(?:-2)?/([a-f0-9]{40}\.png)(?:[?#][^\s<>()"']*)?~i
 REGEX;
 
     /**

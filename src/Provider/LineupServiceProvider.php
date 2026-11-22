@@ -12,9 +12,6 @@ use GuzzleHttp\Client;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
 use Psr\Log\LoggerInterface;
-use Wss\FlarumLineup\Api\ApiFootballClient;
-use Wss\FlarumLineup\Api\ApiKeyStore;
-use Wss\FlarumLineup\DataProvider\ApiFootballProvider;
 use Wss\FlarumLineup\DataProvider\BundesligaAtHttpClient;
 use Wss\FlarumLineup\DataProvider\BundesligaAtParser;
 use Wss\FlarumLineup\DataProvider\BundesligaAtProvider;
@@ -23,7 +20,6 @@ use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 use Wss\FlarumLineup\Image\CachedImageAccess;
 use Wss\FlarumLineup\Image\BundesligaAtImageFetcher;
 use Wss\FlarumLineup\Image\CachedImageLocator;
-use Wss\FlarumLineup\Image\CompositeRemoteImageSource;
 use Wss\FlarumLineup\Image\EloquentGeneratedImageCleanupRepository;
 use Wss\FlarumLineup\Image\GeneratedImageClaimManager;
 use Wss\FlarumLineup\Image\GeneratedImageClaimService;
@@ -36,7 +32,6 @@ use Wss\FlarumLineup\Image\ImageGenerationLockManager;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
 use Wss\FlarumLineup\Image\RemoteImageCache;
 use Wss\FlarumLineup\Image\RemoteImageCacheService;
-use Wss\FlarumLineup\Image\RemoteImageFetcher;
 use Wss\FlarumLineup\Image\RemoteImageSource;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 use Wss\FlarumLineup\Scheduling\SyncScheduleManager;
@@ -50,52 +45,6 @@ final class LineupServiceProvider extends AbstractServiceProvider
 {
     public function register(): void
     {
-        $this->container->singleton(
-            ApiKeyStore::class,
-            function (Container $container): ApiKeyStore {
-                return new ApiKeyStore(
-                    $container->make(
-                        SettingsRepositoryInterface::class
-                    )
-                );
-            }
-        );
-
-        $this->container->singleton(
-            ApiFootballClient::class,
-            function (Container $container): ApiFootballClient {
-                $httpClient = new Client([
-                    'base_uri' => (
-                        'https://v3.football.api-sports.io/'
-                    ),
-                    'connect_timeout' => 5.0,
-                    'timeout' => 10.0,
-                    'http_errors' => false,
-                    'allow_redirects' => false,
-                    'headers' => [
-                        'Accept' => 'application/json',
-                    ],
-                ]);
-
-                return new ApiFootballClient(
-                    $httpClient,
-                    $container->make(ApiKeyStore::class)
-                );
-            }
-        );
-
-        $this->container->singleton(
-            ApiFootballProvider::class,
-            function (Container $container): ApiFootballProvider {
-                return new ApiFootballProvider(
-                    $container->make(ApiFootballClient::class),
-                    $container->make(
-                        SettingsRepositoryInterface::class
-                    )
-                );
-            }
-        );
-
         $this->container->singleton(
             BundesligaAtHttpClient::class,
             static function (
@@ -160,21 +109,10 @@ final class LineupServiceProvider extends AbstractServiceProvider
 
         $this->container->singleton(
             DataProviderResolver::class,
-            function (Container $container): DataProviderResolver {
-                return new DataProviderResolver(
-                    $container->make(
-                        SettingsRepositoryInterface::class
-                    ),
-                    [
-                        $container->make(
-                            ApiFootballProvider::class
-                        ),
-                        $container->make(
-                            BundesligaAtProvider::class
-                        ),
-                    ]
-                );
-            }
+            static fn (Container $container): DataProviderResolver =>
+                new DataProviderResolver(
+                    [$container->make(BundesligaAtProvider::class)]
+                )
         );
 
         $this->container->singleton(
@@ -183,22 +121,6 @@ final class LineupServiceProvider extends AbstractServiceProvider
                 Container $container
             ): FormationCatalog {
                 return new FormationCatalog();
-            }
-        );
-
-        $this->container->singleton(
-            RemoteImageFetcher::class,
-            static function (
-                Container $container
-            ): RemoteImageFetcher {
-                return new RemoteImageFetcher(
-                    new Client([
-                        'connect_timeout' => 3.0,
-                        'timeout' => 5.0,
-                        'http_errors' => false,
-                        'allow_redirects' => false,
-                    ])
-                );
             }
         );
 
@@ -219,32 +141,9 @@ final class LineupServiceProvider extends AbstractServiceProvider
         );
 
         $this->container->singleton(
-            CompositeRemoteImageSource::class,
-            function (
-                Container $container
-            ): CompositeRemoteImageSource {
-                return new CompositeRemoteImageSource(
-                    [
-                        $container->make(
-                            RemoteImageFetcher::class
-                        ),
-                        $container->make(
-                            BundesligaAtImageFetcher::class
-                        ),
-                    ]
-                );
-            }
-        );
-
-        $this->container->singleton(
             RemoteImageSource::class,
-            static function (
-                Container $container
-            ): RemoteImageSource {
-                return $container->make(
-                    CompositeRemoteImageSource::class
-                );
-            }
+            static fn (Container $container): RemoteImageSource =>
+                $container->make(BundesligaAtImageFetcher::class)
         );
 
         $this->container->singleton(

@@ -157,7 +157,7 @@ final class CachedImageLocator implements CachedImageAccess
         }
 
         return sprintf(
-            'assets/wss-lineup/cache/%s/%s/%s.png',
+            'assets/wss-lineup-2/cache/%s/%s/%s.png',
             $type,
             $provider,
             hash('sha256', $providerId)
@@ -173,7 +173,7 @@ final class CachedImageLocator implements CachedImageAccess
 
         $prefix =
             $this->baseUrl
-            .'/assets/wss-lineup/cache/';
+            .'/assets/wss-lineup-2/cache/';
 
         if (!str_starts_with($url, $prefix)) {
             return null;
@@ -196,7 +196,7 @@ final class CachedImageLocator implements CachedImageAccess
             return null;
         }
 
-        return 'assets/wss-lineup/cache/'.$suffix;
+        return 'assets/wss-lineup-2/cache/'.$suffix;
     }
 
     private function absolutePath(

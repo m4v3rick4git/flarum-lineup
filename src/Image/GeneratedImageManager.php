@@ -75,7 +75,7 @@ final class GeneratedImageManager
         ).'.png';
 
         $relativePath =
-            'assets/wss-lineup/'.$filename;
+            'assets/wss-lineup-2/'.$filename;
 
         $outputPath =
             $this->paths->public.'/'.$relativePath;
@@ -98,7 +98,29 @@ final class GeneratedImageManager
         }
 
         try {
-            $renderer($outputPath);
+            // Render into a random temporary file in the same directory.
+            // Never expose a partially written PNG under its public URL.
+            $directory = dirname($outputPath);
+            if (is_link($directory)) {
+                throw new RuntimeException('The output directory must not be a symlink.');
+            }
+            if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+                throw new RuntimeException('Could not create output directory.');
+            }
+            $temporaryPath = $outputPath.'.'.bin2hex(random_bytes(8)).'.tmp';
+            try {
+                $renderer($temporaryPath);
+                if (!is_file($temporaryPath) || is_link($temporaryPath)) {
+                    throw new RuntimeException('The renderer did not create a regular file.');
+                }
+                if (!rename($temporaryPath, $outputPath)) {
+                    throw new RuntimeException('Could not publish generated image.');
+                }
+            } finally {
+                if (isset($temporaryPath) && is_file($temporaryPath)) {
+                    @unlink($temporaryPath);
+                }
+            }
 
             if (!is_file($outputPath)) {
                 throw new RuntimeException(

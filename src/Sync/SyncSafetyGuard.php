@@ -16,7 +16,7 @@ final class SyncSafetyGuard
     ): void {
         if ($received < 1) {
             throw new RuntimeException(
-                'API-Football returned an empty team list.'
+                'The selected provider returned an empty team list.'
             );
         }
 

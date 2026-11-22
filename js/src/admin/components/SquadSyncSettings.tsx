@@ -49,7 +49,7 @@ export default class SquadSyncSettings extends Component {
 
         <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.help')}</p>
 
-        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={() => void this.synchronize()}>
+        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={(): void => void this.synchronize()}>
           {app.translator.trans(
             this.syncing ? 'm4v3rick4git-lineup.admin.squad_sync.syncing_button' : 'm4v3rick4git-lineup.admin.squad_sync.sync_button'
           )}
@@ -116,7 +116,7 @@ export default class SquadSyncSettings extends Component {
 
       this.totalTeams = teams.length;
 
-      const requestDelayMilliseconds = teams[0]?.provider === 'api-football' ? 8000 : 1000;
+      const requestDelayMilliseconds = 1000;
 
       m.redraw();
 

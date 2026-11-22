@@ -34,7 +34,7 @@ final class CleanupGeneratedImagesCommand extends AbstractCommand
             );
     }
 
-    protected function fire()
+    protected function fire(): int
     {
         try {
             $result = $this->cleanupService->cleanup();

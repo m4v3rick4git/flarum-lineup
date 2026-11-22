@@ -9,6 +9,7 @@ interface PitchTeam {
 interface PitchPlayer {
   id: number;
   name: string;
+  displayName?: string;
   shirtNumber: number | null;
   position: string | null;
   photoUrl: string | null;
@@ -201,7 +202,7 @@ export default class LineupPitch extends Component<LineupPitchAttrs> {
                   {player.photoUrl ? <img src={player.photoUrl} alt="" /> : <span>{player.shirtNumber ?? '–'}</span>}
                 </div>
 
-                <strong>{player.name}</strong>
+                <strong>{player.displayName || player.name.trim().split(/\s+/).pop()}</strong>
 
                 <span>{player.shirtNumber !== null ? `#${player.shirtNumber}` : '#–'}</span>
               </button>
