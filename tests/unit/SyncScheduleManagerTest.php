@@ -147,7 +147,7 @@ final class SyncScheduleManagerTest extends TestCase
     private function manager(
         array &$state
     ): SyncScheduleManager {
-        $settings = $this->createMock(
+        $settings = $this->createStub(
             SettingsRepositoryInterface::class
         );
 

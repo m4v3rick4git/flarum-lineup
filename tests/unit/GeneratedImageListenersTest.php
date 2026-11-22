@@ -59,7 +59,7 @@ final class GeneratedImageListenersTest extends TestCase
         $listener->handle(
             new Revised(
                 $post,
-                $this->createMock(User::class),
+                $this->createStub(User::class),
                 'Old content'
             )
         );
@@ -86,7 +86,7 @@ final class GeneratedImageListenersTest extends TestCase
         $listener->handle(
             new Deleted(
                 $post,
-                $this->createMock(User::class)
+                $this->createStub(User::class)
             )
         );
     }

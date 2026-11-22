@@ -13,7 +13,7 @@ use Wss\FlarumLineup\Lineup\FormationCatalog;
 
 final class LineupImageRendererTest extends TestCase
 {
-    public function testItUsesBundledReadableFonts(): void
+    public function testItUsesReadableDejaVuSystemFonts(): void
     {
         $reflection = new ReflectionClass(
             LineupImageRenderer::class
@@ -32,14 +32,10 @@ final class LineupImageRendererTest extends TestCase
             $fontPath = $constant->getValue();
 
             self::assertStringContainsString(
-                '/resources/fonts/',
+                '/usr/share/fonts/truetype/dejavu/',
                 $fontPath
             );
 
-            self::assertStringNotContainsString(
-                '/usr/share/fonts/',
-                $fontPath
-            );
 
             self::assertFileExists(
                 $fontPath
@@ -47,6 +43,10 @@ final class LineupImageRendererTest extends TestCase
 
             self::assertIsReadable(
                 $fontPath
+            );
+
+            self::assertIsArray(
+                imagettfbbox(16, 0, $fontPath, 'Lineup Test')
             );
         }
     }

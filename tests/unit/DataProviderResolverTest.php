@@ -4,117 +4,96 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\Tests\Unit;
 
-use Flarum\Settings\SettingsRepositoryInterface;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Wss\FlarumLineup\DataProvider\BundesligaAtProvider;
 use Wss\FlarumLineup\DataProvider\DataProviderInterface;
 use Wss\FlarumLineup\DataProvider\DataProviderResolver;
 
 final class DataProviderResolverTest extends TestCase
 {
-    public function testApiFootballIsTheDefaultProvider(): void
+    public function testBundesligaAtIsTheDefaultProvider(): void
     {
-        $settings = $this->createSettings(null);
-        $apiFootball = $this->createProvider('api-football');
+        $bundesliga = $this->createProvider('bundesliga-at');
 
-        $resolver = new DataProviderResolver(
-            $settings,
-            [$apiFootball]
-        );
+        $resolver = new DataProviderResolver([$bundesliga]);
 
         $this->assertSame(
-            'api-football',
+            BundesligaAtProvider::PROVIDER_KEY,
             $resolver->selectedProviderKey()
         );
 
-        $this->assertSame(
-            $apiFootball,
-            $resolver->resolve()
-        );
+        $this->assertSame($bundesliga, $resolver->resolve());
     }
 
-    public function testConfiguredProviderIsResolved(): void
+    public function testAdditionalProviderCanBeResolvedExplicitly(): void
     {
-        $settings = $this->createSettings('bundesliga-at');
+        $bundesliga = $this->createProvider('bundesliga-at');
+        $additional = $this->createProvider('additional-provider');
 
-        $apiFootball = $this->createProvider(
-            'api-football'
-        );
+        $resolver = new DataProviderResolver([
+            $bundesliga,
+            $additional,
+        ]);
 
-        $bundesligaAt = $this->createProvider(
-            'bundesliga-at'
-        );
+        $this->assertSame($bundesliga, $resolver->resolve());
 
-        $resolver = new DataProviderResolver(
-            $settings,
-            [
-                $apiFootball,
-                $bundesligaAt,
-            ]
+        $this->assertSame(
+            $additional,
+            $resolver->resolve('additional-provider')
         );
 
         $this->assertSame(
             'bundesliga-at',
             $resolver->selectedProviderKey()
         );
-
-        $this->assertSame(
-            $bundesligaAt,
-            $resolver->resolve()
-        );
     }
 
     public function testUnknownProviderIsRejected(): void
     {
-        $resolver = new DataProviderResolver(
-            $this->createSettings('unknown'),
-            [
-                $this->createProvider('api-football'),
-            ]
-        );
+        $resolver = new DataProviderResolver([
+            $this->createProvider('bundesliga-at'),
+        ]);
 
-        $this->expectException(
-            RuntimeException::class
-        );
+        $this->expectException(RuntimeException::class);
 
-        $resolver->resolve();
+        $resolver->resolve('unknown-provider');
     }
 
     public function testDuplicateProviderKeyIsRejected(): void
     {
-        $this->expectException(
-            InvalidArgumentException::class
-        );
+        $this->expectException(InvalidArgumentException::class);
 
-        new DataProviderResolver(
-            $this->createSettings(null),
-            [
-                $this->createProvider('api-football'),
-                $this->createProvider('api-football'),
-            ]
-        );
+        new DataProviderResolver([
+            $this->createProvider('bundesliga-at'),
+            $this->createProvider('bundesliga-at'),
+        ]);
     }
 
-    private function createSettings(
-        ?string $providerKey
-    ): SettingsRepositoryInterface {
-        $settings = $this->createMock(
-            SettingsRepositoryInterface::class
-        );
+    public function testMissingBundesligaProviderIsRejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
 
-        $settings
-            ->method('get')
-            ->with(DataProviderResolver::SETTING_KEY)
-            ->willReturn($providerKey);
+        new DataProviderResolver([
+            $this->createProvider('additional-provider'),
+        ]);
+    }
 
-        return $settings;
+    public function testEmptyProviderKeyIsRejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new DataProviderResolver([
+            $this->createProvider('bundesliga-at'),
+            $this->createProvider('   '),
+        ]);
     }
 
     private function createProvider(
         string $providerKey
     ): DataProviderInterface {
-        $provider = $this->createMock(
+        $provider = $this->createStub(
             DataProviderInterface::class
         );
 

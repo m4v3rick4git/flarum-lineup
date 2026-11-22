@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wss\FlarumLineup\Tests\Unit;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
 
@@ -27,9 +28,7 @@ final class FormationCatalogTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider formationProvider
-     */
+    #[DataProvider('formationProvider')]
     public function testEveryFormationHasElevenValidSlots(
         string $formation
     ): void {
@@ -78,7 +77,7 @@ final class FormationCatalogTest extends TestCase
     /**
      * @return array<string, array{string}>
      */
-    public function formationProvider(): array
+    public static function formationProvider(): array
     {
         return [
             '4-2-3-1' => ['4-2-3-1'],

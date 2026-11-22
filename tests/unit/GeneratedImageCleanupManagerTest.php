@@ -22,7 +22,7 @@ final class GeneratedImageCleanupManagerTest extends TestCase
             .bin2hex(random_bytes(8));
 
         mkdir(
-            $this->publicPath.'/assets/wss-lineup',
+            $this->publicPath.'/assets/wss-lineup-2',
             0775,
             true
         );
@@ -63,18 +63,21 @@ final class GeneratedImageCleanupManagerTest extends TestCase
             ->method('findExpiredBatch')
             ->willReturn([$first, $second]);
 
+        $deletedIds = [];
+
         $repository
             ->expects($this->exactly(2))
             ->method('delete')
-            ->withConsecutive(
-                [$first],
-                [$second]
+            ->willReturnCallback(
+                static function (GeneratedImage $image) use (&$deletedIds): void {
+                    $deletedIds[] = (int) $image->id;
+                }
             );
 
         $manager = new GeneratedImageCleanupManager(
             $this->publicPath,
             $repository,
-            $this->createMock(LoggerInterface::class)
+            $this->createStub(LoggerInterface::class)
         );
 
         $this->assertSame(
@@ -86,6 +89,8 @@ final class GeneratedImageCleanupManagerTest extends TestCase
             ],
             $manager->cleanup()
         );
+
+        $this->assertSame([1, 2], $deletedIds);
 
         $this->assertFileDoesNotExist(
             $this->publicPath
@@ -102,7 +107,7 @@ final class GeneratedImageCleanupManagerTest extends TestCase
         );
 
         $image->relative_path =
-            'assets/wss-lineup/../invalid.png';
+            'assets/wss-lineup-2/../invalid.png';
 
         $repository = $this->createMock(
             GeneratedImageCleanupRepository::class
@@ -120,7 +125,7 @@ final class GeneratedImageCleanupManagerTest extends TestCase
         $manager = new GeneratedImageCleanupManager(
             $this->publicPath,
             $repository,
-            $this->createMock(LoggerInterface::class)
+            $this->createStub(LoggerInterface::class)
         );
 
         $this->assertSame(
@@ -134,6 +139,62 @@ final class GeneratedImageCleanupManagerTest extends TestCase
         );
     }
 
+    public function testItNeverDeletesLegacyGeneratedImages(): void
+    {
+        $legacy = $this->image(
+            4,
+            str_repeat('d', 40).'.png'
+        );
+
+        $legacy->relative_path =
+            'assets/wss-lineup/'.$legacy->filename;
+
+        $legacyFile =
+            $this->publicPath.'/'.$legacy->relative_path;
+
+        mkdir(dirname($legacyFile), 0775, true);
+
+        $this->assertNotFalse(
+            file_put_contents($legacyFile, 'legacy-image')
+        );
+
+        $repository = $this->createMock(
+            GeneratedImageCleanupRepository::class
+        );
+
+        $repository
+            ->expects($this->once())
+            ->method('findExpiredBatch')
+            ->willReturn([$legacy]);
+
+        $repository
+            ->expects($this->never())
+            ->method('delete');
+
+        $manager = new GeneratedImageCleanupManager(
+            $this->publicPath,
+            $repository,
+            $this->createStub(LoggerInterface::class)
+        );
+
+        $this->assertSame(
+            [
+                'scanned' => 1,
+                'deletedFiles' => 0,
+                'deletedRecords' => 0,
+                'failed' => 1,
+            ],
+            $manager->cleanup()
+        );
+
+        $this->assertFileExists($legacyFile);
+
+        $this->assertSame(
+            'legacy-image',
+            file_get_contents($legacyFile)
+        );
+    }
+
     private function image(
         int $id,
         string $filename
@@ -143,7 +204,7 @@ final class GeneratedImageCleanupManagerTest extends TestCase
         $image->id = $id;
         $image->filename = $filename;
         $image->relative_path =
-            'assets/wss-lineup/'.$filename;
+            'assets/wss-lineup-2/'.$filename;
 
         return $image;
     }
