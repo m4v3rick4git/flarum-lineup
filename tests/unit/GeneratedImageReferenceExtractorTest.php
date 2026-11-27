@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Wss\FlarumLineup\Image\GeneratedImageReferenceExtractor;
 
@@ -90,9 +91,7 @@ final class GeneratedImageReferenceExtractorTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider invalidReferenceProvider
-     */
+    #[DataProvider('invalidReferenceProvider')]
     public function testItRejectsUnrelatedOrInvalidReferences(
         string $content
     ): void {

@@ -153,11 +153,11 @@ final class BundesligaAtProviderTest extends TestCase
 
     public function testItRejectsInvalidTeamId(): void
     {
-        $source = $this->createMock(
+        $source = $this->createStub(
             BundesligaAtSource::class
         );
 
-        $settings = $this->createMock(
+        $settings = $this->createStub(
             SettingsRepositoryInterface::class
         );
 

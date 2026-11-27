@@ -1,5 +1,5 @@
-import app from 'flarum/admin/app';
-import Component from 'flarum/common/Component';
+import app from "flarum/admin/app";
+import Component from "flarum/common/Component";
 
 interface Team {
   id: number;
@@ -38,46 +38,69 @@ export default class SquadSyncSettings extends Component {
   private syncing = false;
   private failed = false;
   private result: AggregateResult | null = null;
-  private currentTeam = '';
+  private currentTeam = "";
   private completedTeams = 0;
   private totalTeams = 0;
 
   view() {
     return (
       <div className="Form-group">
-        <label>{app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.title')}</label>
+        <label>
+          {app.translator.trans("m4v3rick4git-lineup.admin.squad_sync.title")}
+        </label>
 
-        <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.help')}</p>
+        <p className="helpText">
+          {app.translator.trans("m4v3rick4git-lineup.admin.squad_sync.help")}
+        </p>
 
-        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={() => void this.synchronize()}>
+        <button
+          className="Button Button--primary"
+          type="button"
+          disabled={this.syncing}
+          onclick={(): void => void this.synchronize()}
+        >
           {app.translator.trans(
-            this.syncing ? 'm4v3rick4git-lineup.admin.squad_sync.syncing_button' : 'm4v3rick4git-lineup.admin.squad_sync.sync_button'
+            this.syncing
+              ? "m4v3rick4git-lineup.admin.squad_sync.syncing_button"
+              : "m4v3rick4git-lineup.admin.squad_sync.sync_button",
           )}
         </button>
 
         {this.syncing && this.currentTeam && (
           <p className="helpText">
-            {app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.progress_message', {
-              team: this.currentTeam,
-              completed: this.completedTeams,
-              total: this.totalTeams,
-            })}
+            {app.translator.trans(
+              "m4v3rick4git-lineup.admin.squad_sync.progress_message",
+              {
+                team: this.currentTeam,
+                completed: this.completedTeams,
+                total: this.totalTeams,
+              },
+            )}
           </p>
         )}
 
         {this.result && (
           <p className="helpText">
-            {app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.success_message', {
-              teams: this.result.teams,
-              received: this.result.received,
-              created: this.result.created,
-              updated: this.result.updated,
-              deactivated: this.result.deactivated,
-            })}
+            {app.translator.trans(
+              "m4v3rick4git-lineup.admin.squad_sync.success_message",
+              {
+                teams: this.result.teams,
+                received: this.result.received,
+                created: this.result.created,
+                updated: this.result.updated,
+                deactivated: this.result.deactivated,
+              },
+            )}
           </p>
         )}
 
-        {this.failed && <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.squad_sync.error_message')}</p>}
+        {this.failed && (
+          <p className="helpText">
+            {app.translator.trans(
+              "m4v3rick4git-lineup.admin.squad_sync.error_message",
+            )}
+          </p>
+        )}
       </div>
     );
   }
@@ -90,7 +113,7 @@ export default class SquadSyncSettings extends Component {
     this.syncing = true;
     this.failed = false;
     this.result = null;
-    this.currentTeam = '';
+    this.currentTeam = "";
     this.completedTeams = 0;
     this.totalTeams = 0;
 
@@ -104,19 +127,19 @@ export default class SquadSyncSettings extends Component {
 
     try {
       const teamResponse = await app.request<TeamListResponse>({
-        method: 'GET',
-        url: `${app.forum.attribute('apiUrl')}/wss-lineup/teams`,
+        method: "GET",
+        url: `${app.forum.attribute("apiUrl")}/wss-lineup/teams`,
       });
 
       const teams = teamResponse.teams;
 
       if (!Array.isArray(teams) || teams.length === 0) {
-        throw new Error('No active teams are available.');
+        throw new Error("No active teams are available.");
       }
 
       this.totalTeams = teams.length;
 
-      const requestDelayMilliseconds = teams[0]?.provider === 'api-football' ? 8000 : 1000;
+      const requestDelayMilliseconds = 1000;
 
       m.redraw();
 
@@ -146,7 +169,7 @@ export default class SquadSyncSettings extends Component {
       this.failed = true;
     } finally {
       this.syncing = false;
-      this.currentTeam = '';
+      this.currentTeam = "";
       m.redraw();
     }
   }
@@ -169,8 +192,8 @@ export default class SquadSyncSettings extends Component {
 
   private requestTeamSync(teamId: number): Promise<SquadSyncResult> {
     return app.request<SquadSyncResult>({
-      method: 'POST',
-      url: `${app.forum.attribute('apiUrl')}/wss-lineup/squads/sync`,
+      method: "POST",
+      url: `${app.forum.attribute("apiUrl")}/wss-lineup/squads/sync`,
       body: {
         teamId,
       },

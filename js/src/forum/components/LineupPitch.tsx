@@ -1,5 +1,5 @@
-import Component from 'flarum/common/Component';
-import type Mithril from 'mithril';
+import Component from "flarum/common/Component";
+import type Mithril from "mithril";
 
 interface PitchTeam {
   name: string;
@@ -9,6 +9,7 @@ interface PitchTeam {
 interface PitchPlayer {
   id: number;
   name: string;
+  displayName?: string;
   shirtNumber: number | null;
   position: string | null;
   photoUrl: string | null;
@@ -24,13 +25,21 @@ interface FormationDefinition {
   slots: FormationSlot[];
 }
 
-export type FormationKey = '4-2-3-1' | '4-3-3' | '4-4-2' | '3-5-2' | '3-4-3' | '5-3-2';
+export type FormationKey =
+  "4-2-3-1" | "4-3-3" | "4-4-2" | "3-5-2" | "3-4-3" | "5-3-2";
 
-const FORMATION_KEYS: FormationKey[] = ['4-2-3-1', '4-3-3', '4-4-2', '3-5-2', '3-4-3', '5-3-2'];
+const FORMATION_KEYS: FormationKey[] = [
+  "4-2-3-1",
+  "4-3-3",
+  "4-4-2",
+  "3-5-2",
+  "3-4-3",
+  "5-3-2",
+];
 
 const FORMATIONS: Record<FormationKey, FormationDefinition> = {
-  '4-2-3-1': {
-    label: '4-2-3-1',
+  "4-2-3-1": {
+    label: "4-2-3-1",
     slots: [
       { x: 50, y: 90 },
       { x: 14, y: 73 },
@@ -46,8 +55,8 @@ const FORMATIONS: Record<FormationKey, FormationDefinition> = {
     ],
   },
 
-  '4-3-3': {
-    label: '4-3-3',
+  "4-3-3": {
+    label: "4-3-3",
     slots: [
       { x: 50, y: 90 },
       { x: 14, y: 73 },
@@ -63,8 +72,8 @@ const FORMATIONS: Record<FormationKey, FormationDefinition> = {
     ],
   },
 
-  '4-4-2': {
-    label: '4-4-2',
+  "4-4-2": {
+    label: "4-4-2",
     slots: [
       { x: 50, y: 90 },
       { x: 14, y: 73 },
@@ -80,8 +89,8 @@ const FORMATIONS: Record<FormationKey, FormationDefinition> = {
     ],
   },
 
-  '3-5-2': {
-    label: '3-5-2',
+  "3-5-2": {
+    label: "3-5-2",
     slots: [
       { x: 50, y: 90 },
       { x: 25, y: 75 },
@@ -97,8 +106,8 @@ const FORMATIONS: Record<FormationKey, FormationDefinition> = {
     ],
   },
 
-  '3-4-3': {
-    label: '3-4-3',
+  "3-4-3": {
+    label: "3-4-3",
     slots: [
       { x: 50, y: 90 },
       { x: 25, y: 75 },
@@ -114,8 +123,8 @@ const FORMATIONS: Record<FormationKey, FormationDefinition> = {
     ],
   },
 
-  '5-3-2': {
-    label: '5-3-2',
+  "5-3-2": {
+    label: "5-3-2",
     slots: [
       { x: 50, y: 90 },
       { x: 9, y: 70 },
@@ -143,7 +152,14 @@ interface LineupPitchAttrs {
 
 export default class LineupPitch extends Component<LineupPitchAttrs> {
   view(vnode: Mithril.Vnode<LineupPitchAttrs>) {
-    const { team, players, formation, selectedSlotIndex, onFormationChange, onSelectSlot } = vnode.attrs;
+    const {
+      team,
+      players,
+      formation,
+      selectedSlotIndex,
+      onFormationChange,
+      onSelectSlot,
+    } = vnode.attrs;
 
     const definition = FORMATIONS[formation];
 
@@ -159,7 +175,11 @@ export default class LineupPitch extends Component<LineupPitchAttrs> {
           <select
             className="LineupPitch-formationSelect"
             value={formation}
-            onchange={(event: Event) => onFormationChange((event.target as HTMLSelectElement).value as FormationKey)}
+            onchange={(event: Event) =>
+              onFormationChange(
+                (event.target as HTMLSelectElement).value as FormationKey,
+              )
+            }
           >
             {FORMATION_KEYS.map((formationKey) => (
               <option value={formationKey} key={formationKey}>
@@ -188,7 +208,10 @@ export default class LineupPitch extends Component<LineupPitchAttrs> {
 
             return (
               <button
-                className={['LineupPitch-player', selectedSlotIndex === slotIndex ? 'is-selected' : ''].join(' ')}
+                className={[
+                  "LineupPitch-player",
+                  selectedSlotIndex === slotIndex ? "is-selected" : "",
+                ].join(" ")}
                 type="button"
                 key={player.id}
                 style={{
@@ -198,12 +221,22 @@ export default class LineupPitch extends Component<LineupPitchAttrs> {
                 onclick={() => onSelectSlot(slotIndex)}
               >
                 <div className="LineupPitch-playerPhoto">
-                  {player.photoUrl ? <img src={player.photoUrl} alt="" /> : <span>{player.shirtNumber ?? '–'}</span>}
+                  {player.photoUrl ? (
+                    <img src={player.photoUrl} alt="" />
+                  ) : (
+                    <span>{player.shirtNumber ?? "–"}</span>
+                  )}
                 </div>
 
-                <strong>{player.name}</strong>
+                <strong>
+                  {player.displayName || player.name.trim().split(/\s+/).pop()}
+                </strong>
 
-                <span>{player.shirtNumber !== null ? `#${player.shirtNumber}` : '#–'}</span>
+                <span>
+                  {player.shirtNumber !== null
+                    ? `#${player.shirtNumber}`
+                    : "#–"}
+                </span>
               </button>
             );
           })}

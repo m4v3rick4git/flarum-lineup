@@ -7,6 +7,7 @@ namespace Wss\FlarumLineup\Tests\Unit;
 use GdImage;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Wss\FlarumLineup\Image\RemoteImageFetcher;
 
@@ -77,9 +78,7 @@ final class RemoteImageFetcherTest extends TestCase
         imagedestroy($image);
     }
 
-    /**
-     * @dataProvider disallowedUrlProvider
-     */
+    #[DataProvider('disallowedUrlProvider')]
     public function testItRejectsDisallowedUrls(
         string $url
     ): void {
@@ -149,9 +148,7 @@ final class RemoteImageFetcherTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider unsafeAddressProvider
-     */
+    #[DataProvider('unsafeAddressProvider')]
     public function testItRejectsUnsafeDnsAddresses(
         string $address
     ): void {

@@ -1,31 +1,22 @@
 <?php
 
-/*
- * This file is part of m4v3rick4git/flarum-lineup.
- *
- * Copyright (c) 2026 m4v3rick.
- *
- * For the full copyright and license information, please view the LICENSE.md
- * file that was distributed with this source code.
- */
+declare(strict_types=1);
 
 namespace Wss\FlarumLineup;
 
-use Flarum\Api\Serializer\ForumSerializer;
+use Flarum\Api\Resource\ForumResource;
+use Flarum\Api\Schema;
 use Flarum\Extend;
 use Flarum\Post\Event\Deleted;
 use Flarum\Post\Event\Posted;
 use Flarum\Post\Event\Revised;
 use Illuminate\Console\Scheduling\Event;
+use Flarum\Api\Context;
 use Wss\FlarumLineup\Api\Controller\CreateLineupImageController;
-use Wss\FlarumLineup\Api\Controller\DeleteApiKeyController;
 use Wss\FlarumLineup\Api\Controller\ListPlayersController;
 use Wss\FlarumLineup\Api\Controller\ListTeamsController;
-use Wss\FlarumLineup\Api\Controller\StoreApiKeyController;
 use Wss\FlarumLineup\Api\Controller\SynchronizeSquadsController;
 use Wss\FlarumLineup\Api\Controller\SynchronizeTeamsController;
-use Wss\FlarumLineup\Api\Controller\TestApiKeyController;
-use Wss\FlarumLineup\Api\Controller\ShowApiKeyStatusController;
 use Wss\FlarumLineup\Console\AutomaticSynchronizeCommand;
 use Wss\FlarumLineup\Console\CleanupGeneratedImagesCommand;
 use Wss\FlarumLineup\Console\RefreshBundesligaPlayerImagesCommand;
@@ -38,99 +29,37 @@ use Wss\FlarumLineup\Provider\LineupServiceProvider;
 
 return [
     (new Extend\Routes('api'))
-        ->post(
-            '/wss-lineup/images',
-            'wss-lineup.images.create',
-            CreateLineupImageController::class
-        )
-        ->get(
-            '/wss-lineup/teams',
-            'wss-lineup.teams.index',
-            ListTeamsController::class
-        )
-        ->get(
-            '/wss-lineup/players',
-            'wss-lineup.players.index',
-            ListPlayersController::class
-        )
-        ->post(
-            '/wss-lineup/api-key/test',
-            'wss-lineup.api-key.test',
-            TestApiKeyController::class
-        )
-        ->get(
-            '/wss-lineup/api-key',
-            'wss-lineup.api-key.show',
-            ShowApiKeyStatusController::class
-        )
-        ->post(
-            '/wss-lineup/squads/sync',
-            'wss-lineup.squads.sync',
-            SynchronizeSquadsController::class
-        )
-        ->post(
-            '/wss-lineup/teams/sync',
-            'wss-lineup.teams.sync',
-            SynchronizeTeamsController::class
-        )
-        ->post(
-            '/wss-lineup/api-key',
-            'wss-lineup.api-key.store',
-            StoreApiKeyController::class
-        )
-        ->delete(
-            '/wss-lineup/api-key',
-            'wss-lineup.api-key.delete',
-            DeleteApiKeyController::class
-        ),
+        ->post('/wss-lineup/images', 'wss-lineup.images.create', CreateLineupImageController::class)
+        ->get('/wss-lineup/teams', 'wss-lineup.teams.index', ListTeamsController::class)
+        ->get('/wss-lineup/players', 'wss-lineup.players.index', ListPlayersController::class)
+        ->post('/wss-lineup/teams/sync', 'wss-lineup.teams.sync', SynchronizeTeamsController::class)
+        ->post('/wss-lineup/squads/sync', 'wss-lineup.squads.sync', SynchronizeSquadsController::class),
+
+    (new Extend\ApiResource(ForumResource::class))
+        ->fields(fn () => [
+            Schema\Boolean::make('canCreateLineup')
+                ->get(fn (object $forum, Context $context): bool =>
+                    $context->getActor()->can('wss-lineup.createLineup')),
+        ]),
+
+    (new Extend\ServiceProvider())->register(LineupServiceProvider::class),
+
     (new Extend\Console())
         ->command(AutomaticSynchronizeCommand::class)
         ->command(CleanupGeneratedImagesCommand::class)
         ->command(RefreshBundesligaPlayerImagesCommand::class)
         ->command(SynchronizeTeamsCommand::class)
         ->command(SynchronizeSquadsCommand::class)
-        ->schedule(
-            CleanupGeneratedImagesCommand::class,
-            function (Event $event): void {
-                $event
-                    ->dailyAt('03:30')
-                    ->timezone('Europe/Vienna')
-                    ->withoutOverlapping(15);
-            }
-        )
-        ->schedule(
-            AutomaticSynchronizeCommand::class,
-            function (Event $event): void {
-                $event
-                    ->everyMinute()
-                    ->timezone('Europe/Vienna')
-                    ->withoutOverlapping(30);
-            }
-        ),
+        ->schedule(CleanupGeneratedImagesCommand::class,
+            fn (Event $event) => $event->dailyAt('03:30')->timezone('Europe/Vienna')->withoutOverlapping(15))
+        ->schedule(AutomaticSynchronizeCommand::class,
+            fn (Event $event) => $event->everyMinute()->timezone('Europe/Vienna')->withoutOverlapping(30)),
+
     (new Extend\Event())
-        ->listen(
-            Deleted::class,
-            HandleDeletedGeneratedImages::class
-        )
-        ->listen(
-            Posted::class,
-            HandlePostedGeneratedImages::class
-        )
-        ->listen(
-            Revised::class,
-            HandleRevisedGeneratedImages::class
-        ),
-    (new Extend\ApiSerializer(ForumSerializer::class))
-        ->attribute(
-            'canCreateLineup',
-            function (ForumSerializer $serializer): bool {
-                return $serializer
-                    ->getActor()
-                    ->can('wss-lineup.createLineup');
-            }
-        ),
-    (new Extend\ServiceProvider())
-        ->register(LineupServiceProvider::class),
+        ->listen(Deleted::class, HandleDeletedGeneratedImages::class)
+        ->listen(Posted::class, HandlePostedGeneratedImages::class)
+        ->listen(Revised::class, HandleRevisedGeneratedImages::class),
+
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
         ->css(__DIR__.'/less/forum.less'),

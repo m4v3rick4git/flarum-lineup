@@ -37,7 +37,7 @@ final class CachedImageLocatorTest extends TestCase
     public function testItReturnsALocalTeamLogoUrl(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/teams/api-football/'
+            'assets/wss-lineup-2/cache/teams/bundesliga-at/'
             .self::TEAM_ID_HASH
             .'.png';
 
@@ -48,7 +48,7 @@ final class CachedImageLocatorTest extends TestCase
         $this->assertSame(
             'https://forum.example.test/'.$relativePath,
             $locator->teamLogoUrl(
-                'api-football',
+                'bundesliga-at',
                 '571'
             )
         );
@@ -57,7 +57,7 @@ final class CachedImageLocatorTest extends TestCase
     public function testItReturnsALocalPlayerPhotoUrl(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/players/api-football/'
+            'assets/wss-lineup-2/cache/players/bundesliga-at/'
             .self::PLAYER_ID_HASH
             .'.png';
 
@@ -66,7 +66,7 @@ final class CachedImageLocatorTest extends TestCase
         $this->assertSame(
             'https://forum.example.test/'.$relativePath,
             $this->locator()->playerPhotoUrl(
-                'api-football',
+                'bundesliga-at',
                 '1001'
             )
         );
@@ -77,7 +77,7 @@ final class CachedImageLocatorTest extends TestCase
         $providerTeamId = 'SK-RBS';
 
         $relativePath =
-            'assets/wss-lineup/cache/teams/bundesliga-at/'
+            'assets/wss-lineup-2/cache/teams/bundesliga-at/'
             .hash('sha256', $providerTeamId)
             .'.png';
 
@@ -98,14 +98,14 @@ final class CachedImageLocatorTest extends TestCase
 
         $this->assertNull(
             $locator->teamLogoUrl(
-                'api-football',
+                'bundesliga-at',
                 '571'
             )
         );
 
         $this->assertNull(
             $locator->playerPhotoUrl(
-                'api-football',
+                'bundesliga-at',
                 '1001'
             )
         );
@@ -114,7 +114,7 @@ final class CachedImageLocatorTest extends TestCase
     public function testItLoadsOnlyItsOwnCachedImages(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/players/api-football/'
+            'assets/wss-lineup-2/cache/players/bundesliga-at/'
             .self::PLAYER_ID_HASH
             .'.png';
 
@@ -144,11 +144,33 @@ final class CachedImageLocatorTest extends TestCase
         $this->assertNull(
             $locator->load(
                 'https://forum.example.test/'
-                .'assets/wss-lineup/cache/'
-                .'players/api-football/../'
+                .'assets/wss-lineup-2/cache/'
+                .'players/bundesliga-at/../'
                 .'teams/'
                 .self::TEAM_ID_HASH
                 .'.png'
+            )
+        );
+    }
+
+    public function testItDoesNotResolveLegacyCacheFiles(): void
+    {
+        $legacyPath =
+            'assets/wss-lineup/cache/teams/bundesliga-at/'
+            .self::TEAM_ID_HASH
+            .'.png';
+
+        $this->createPng($legacyPath);
+
+        $locator = $this->locator();
+
+        $this->assertNull(
+            $locator->teamLogoUrl('bundesliga-at', '571')
+        );
+
+        $this->assertNull(
+            $locator->load(
+                'https://forum.example.test/'.$legacyPath
             )
         );
     }

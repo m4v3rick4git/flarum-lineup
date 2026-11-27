@@ -4,82 +4,46 @@ declare(strict_types=1);
 
 namespace Wss\FlarumLineup\DataProvider;
 
-use Flarum\Settings\SettingsRepositoryInterface;
 use InvalidArgumentException;
 use RuntimeException;
 
+/**
+ * Extend by registering a new DataProviderInterface in the service provider.
+ * v0.2.0 intentionally does not expose a provider-switching UI.
+ */
 final class DataProviderResolver
 {
-    public const SETTING_KEY = 'wss-lineup.data_provider';
+    public const DEFAULT_PROVIDER = BundesligaAtProvider::PROVIDER_KEY;
 
-    public const DEFAULT_PROVIDER = 'api-football';
-
-    private SettingsRepositoryInterface $settings;
-
-    /**
-     * @var array<string, DataProviderInterface>
-     */
+    /** @var array<string, DataProviderInterface> */
     private array $providers = [];
 
-    /**
-     * @param array<int, DataProviderInterface> $providers
-     */
-    public function __construct(
-        SettingsRepositoryInterface $settings,
-        array $providers
-    ) {
-        $this->settings = $settings;
-
+    /** @param array<int, DataProviderInterface> $providers */
+    public function __construct(array $providers)
+    {
         foreach ($providers as $provider) {
             $key = trim($provider->providerKey());
-
-            if ($key === '') {
-                throw new InvalidArgumentException(
-                    'A data provider must have a non-empty key.'
-                );
+            if ($key === '' || isset($this->providers[$key])) {
+                throw new InvalidArgumentException('Provider ID missing or registered twice.');
             }
-
-            if (isset($this->providers[$key])) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'The data provider "%s" is registered more than once.',
-                        $key
-                    )
-                );
-            }
-
             $this->providers[$key] = $provider;
+        }
+        if (!isset($this->providers[self::DEFAULT_PROVIDER])) {
+            throw new InvalidArgumentException('Bundesliga.at must be available in v0.2.0.');
         }
     }
 
-    public function resolve(): DataProviderInterface
+    public function resolve(?string $providerKey = null): DataProviderInterface
     {
-        $key = $this->selectedProviderKey();
-
+        $key = $providerKey ?? self::DEFAULT_PROVIDER;
         if (!isset($this->providers[$key])) {
-            throw new RuntimeException(
-                sprintf(
-                    'The configured data provider "%s" is not available.',
-                    $key
-                )
-            );
+            throw new RuntimeException('The requested lineup provider is not registered.');
         }
-
         return $this->providers[$key];
     }
 
     public function selectedProviderKey(): string
     {
-        $value = $this->settings->get(self::SETTING_KEY);
-
-        if (!is_string($value)) {
-            return self::DEFAULT_PROVIDER;
-        }
-
-        $value = trim($value);
-
-        return $value !== ''
-            ? $value
-            : self::DEFAULT_PROVIDER;
+        return self::DEFAULT_PROVIDER;
     }
 }

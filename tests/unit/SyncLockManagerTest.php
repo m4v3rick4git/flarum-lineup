@@ -43,12 +43,23 @@ SQL;
             ConnectionInterface::class
         );
 
+        $callIndex = 0;
+
         $database
             ->expects($this->exactly(2))
             ->method('selectOne')
-            ->withConsecutive(
-                [self::ACQUIRE_SQL, [], false],
-                [self::RELEASE_SQL, [], false]
+            ->with(
+                $this->callback(
+                    function (string $sql) use (&$callIndex): bool {
+                        $expected = $callIndex++ === 0
+                            ? self::ACQUIRE_SQL
+                            : self::RELEASE_SQL;
+
+                        return $sql === $expected;
+                    }
+                ),
+                [],
+                false
             )
             ->willReturnOnConsecutiveCalls(
                 (object) ['acquired' => 1],

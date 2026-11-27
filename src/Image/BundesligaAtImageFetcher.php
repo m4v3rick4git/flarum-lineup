@@ -115,11 +115,8 @@ final class BundesligaAtImageFetcher implements
             (string) ($requestParts['host'] ?? '')
         );
 
-        if (
-            !$this->resolvesOnlyToPublicAddresses(
-                $requestHost
-            )
-        ) {
+        $curlResolve = $this->validatedCurlResolve($requestHost);
+        if ($curlResolve === null) {
             return null;
         }
 
@@ -129,6 +126,10 @@ final class BundesligaAtImageFetcher implements
                 $request['url'],
                 [
                     'allow_redirects' => false,
+                    'curl' => $curlResolve,
+                    'force_ip_resolve' => 'v4',
+                    'proxy' => '',
+                    'verify' => true,
                     'connect_timeout' => 3.0,
                     'timeout' => 8.0,
                     'http_errors' => false,
@@ -321,31 +322,34 @@ final class BundesligaAtImageFetcher implements
         return false;
     }
 
-    private function resolvesOnlyToPublicAddresses(
-        string $host
-    ): bool {
-        $addresses = ($this->dnsResolver)(
-            $host
-        );
-
-        if ($addresses === []) {
-            return false;
+    /** @return array<int,array<int,string>>|null */
+    private function validatedCurlResolve(string $host): ?array
+    {
+        // Fail closed: a non-cURL transport could silently ignore CURLOPT_RESOLVE.
+        if (!extension_loaded('curl') || !defined('CURLOPT_RESOLVE')) {
+            return null;
         }
-
+        $addresses = ($this->dnsResolver)($host);
+        if ($addresses === []) {
+            return null;
+        }
+        $chosenIpv4 = null;
         foreach ($addresses as $address) {
-            if (
-                filter_var(
-                    $address,
-                    FILTER_VALIDATE_IP,
-                    FILTER_FLAG_NO_PRIV_RANGE
-                    | FILTER_FLAG_NO_RES_RANGE
-                ) === false
-            ) {
-                return false;
+            if (!is_string($address) || filter_var(
+                $address,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            ) === false) {
+                return null;
+            }
+            if ($chosenIpv4 === null && filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $chosenIpv4 = $address;
             }
         }
-
-        return true;
+        if ($chosenIpv4 === null) {
+            return null;
+        }
+        return [CURLOPT_RESOLVE => ["{$host}:443:{$chosenIpv4}"]];
     }
 
     private function isAllowedResponse(

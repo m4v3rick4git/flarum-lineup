@@ -18,6 +18,7 @@ use Wss\FlarumLineup\Image\GeneratedImageManager;
 use Wss\FlarumLineup\Image\ImageGenerationThrottledException;
 use Wss\FlarumLineup\Image\LineupImageRenderer;
 use Wss\FlarumLineup\Lineup\FormationCatalog;
+use Wss\FlarumLineup\Lineup\DisplayName;
 use Wss\FlarumLineup\Model\Player;
 use Wss\FlarumLineup\Model\Team;
 
@@ -211,7 +212,7 @@ final class CreateLineupImageController implements
             }
 
             $players[] = [
-                'name' => (string) $player->name,
+                'name' => DisplayName::fromFullName((string) $player->name),
                 'shirtNumber' => $player->shirt_number,
                 'photoUrl' => (
                     $this->cachedImageAccess->playerPhotoUrl(

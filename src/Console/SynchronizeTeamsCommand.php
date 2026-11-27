@@ -34,7 +34,7 @@ final class SynchronizeTeamsCommand extends AbstractCommand
             );
     }
 
-    protected function fire()
+    protected function fire(): int
     {
         try {
             $result = $this->teamSynchronizer->synchronize();

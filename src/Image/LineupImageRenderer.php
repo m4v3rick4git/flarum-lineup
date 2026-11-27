@@ -28,10 +28,10 @@ final class LineupImageRenderer
     private const PLAYER_PHOTO_SIZE = 88;
 
     private const FONT_REGULAR =
-        __DIR__.'/../../resources/fonts/DejaVuSans.ttf';
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
 
     private const FONT_BOLD =
-        __DIR__.'/../../resources/fonts/DejaVuSans-Bold.ttf';
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 
     private FormationCatalog $formationCatalog;
 
@@ -813,6 +813,9 @@ final class LineupImageRenderer
     ): void {
         $directory = dirname($outputPath);
 
+        if (is_link($directory)) {
+            throw new RuntimeException('The image directory must not be a symlink.');
+        }
         if (is_dir($directory)) {
             return;
         }
@@ -834,7 +837,7 @@ final class LineupImageRenderer
             || !is_file(self::FONT_BOLD)
         ) {
             throw new RuntimeException(
-                'Required font files are missing.'
+                'System DejaVu fonts missing: install fonts-dejavu-core inside the PHP container.'
             );
         }
     }

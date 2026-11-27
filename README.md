@@ -1,138 +1,147 @@
 # Flarum Lineup
 
-A Flarum extension for creating football lineups and inserting them as generated images into posts.
+A Flarum extension for creating Austrian Bundesliga football lineups
+and inserting them as generated PNG images into forum posts.
 
-The extension supports multiple data providers for Austrian Bundesliga team and squad data.
+## Compatibility
 
-## Data providers
+| Extension version | Flarum | PHP |
+|---|---|---|
+| 0.2.x | 2.x | 8.3 or newer |
+| 0.1.5 | 1.8.x | 8.1 or newer |
 
-### API-Football
-
-API-Football remains the default provider. It requires:
-
-- API key
-- Austrian Bundesliga league ID
-- season start year
-
-### Bundesliga.at
-
-The Bundesliga.at provider reads the current club and squad pages from:
-
-```text
-https://www.bundesliga.at
-```
-
-No API key is required.
-
-Provider-specific team and player identifiers are stored as strings and remain isolated from identifiers belonging to other providers.
+Version 0.2.0 introduces compatibility with Flarum 2.
+It has been tested with Flarum 2.0.2 and PHP 8.4.
 
 ## Features
 
-- Selectable data provider in the Flarum administration
-- Synchronize current teams and squads
-- Cache team logos and player photos locally per provider
-- Select eleven players from one team
-- Choose from several common formations
-- Generate a PNG lineup image
-- Insert the generated image directly into the Flarum composer
-- Control access through a dedicated Flarum permission
+- Austrian Bundesliga team and squad data from Bundesliga.at
+- No API key required
+- Six football formations
+- Selection of eleven players from one team
+- Full player names in the selection interface
+- Short player names on the pitch
+- Locally cached team logos and player photos
+- Server-side generation of 1200 x 1600 PNG images
+- Direct insertion into the Flarum composer
+- Dedicated permission for creating football lineups
+- Manual and automatic team and squad synchronization
+- Automatic cleanup of unused generated images
 - German and English translations
 
 ## Requirements
 
-- Flarum 1.8 within the 1.x release series
-- PHP 8.1 or newer
-- PHP GD extension with FreeType support
+- Flarum 2.x
+- PHP 8.3 or newer
+- PHP GD with FreeType support
 - PHP DOM extension
+- PHP cURL extension
+- DejaVu Sans fonts installed on the server
+- Write access to Flarum's public/assets directory
 
-The extension bundles the DejaVu Sans fonts used by the lineup renderer.
-
-The PHP process must be able to write to Flarum's `public/assets` directory.
+On Debian, the required fonts are available through the
+fonts-dejavu-core package.
 
 ## Installation
 
-Install the extension with Composer from the Flarum root directory:
+From the Flarum root directory:
 
-```sh
-composer require m4v3rick4git/flarum-lineup:^0.1
+~~~sh
+composer require m4v3rick4git/flarum-lineup:^0.2
 php flarum migrate
 php flarum cache:clear
-```
+~~~
 
-Enable **Flarum Lineup** in the Flarum administration panel.
+Enable Flarum Lineup in the administration panel.
+
+For Flarum 1.8 installations, continue using version 0.1.5.
 
 ## Configuration
 
-Open the extension settings in the Flarum administration panel and:
+1. Open the extension settings in the administration panel.
+2. Synchronize teams.
+3. Synchronize squads.
+4. Grant the Create football lineups permission to the desired groups.
+5. Configure automatic synchronization if required.
 
-1. Select the data source.
-2. Save the settings.
-3. For API-Football, configure the API key, league ID and season.
-4. Synchronize the teams.
-5. Synchronize the squads.
-6. Grant the **Create football lineups** permission to the desired user groups.
-
-The selected provider is also used by the scheduled synchronization commands.
+Bundesliga.at is the only active data provider in version 0.2.0.
+The provider-neutral architecture is retained for future extensions.
 
 ## Scheduled synchronization
 
-Automatic team and squad synchronization can be enabled independently in the Flarum administration.
+Team and squad synchronization can be configured independently:
 
-Each synchronization has its own schedule and supports:
+- Daily: time
+- Weekly: weekday and time
+- Monthly: day 1 through 28 and time
 
-- daily: time
-- weekly: weekday and time
-- monthly: day 1 through 28 and time
+Schedules use the Europe/Vienna timezone.
 
-Times are interpreted in the `Europe/Vienna` timezone. Automatic synchronization is disabled by default. Enabling or changing a schedule arms the next future slot instead of immediately running a missed slot.
+Automatic synchronization is disabled by default.
+Manual synchronization does not change automatic schedules.
 
-The manual team and squad synchronization buttons remain available at all times and do not change the automatic schedule.
+Generated-image cleanup is scheduled daily at 03:30.
 
-The generated-image cleanup runs daily at 03:30.
+Flarum's scheduler must be configured for automatic tasks to run.
 
 ## Generated images and cached assets
 
-Generated lineup images are stored in:
+Version 0.2.x uses:
 
-```text
+~~~text
+public/assets/wss-lineup-2/
+~~~
+
+Existing images from version 0.1.x remain at:
+
+~~~text
 public/assets/wss-lineup/
-```
+~~~
 
-Team logos and player photos are downloaded during synchronization, validated, converted to PNG and cached locally by provider:
+Do not remove the legacy directory when upgrading.
+Existing forum posts may still reference its images.
 
-```text
-public/assets/wss-lineup/cache/teams/api-football/
-public/assets/wss-lineup/cache/teams/bundesliga-at/
+Team logos and player photos are cached locally as PNG files.
+Generated lineup images are stored separately from provider caches.
 
-public/assets/wss-lineup/cache/players/api-football/
-public/assets/wss-lineup/cache/players/bundesliga-at/
-```
+## Upgrading from 0.1.5
 
-The provider identifier is part of the cache path. The provider's original team or player identifier is SHA-256 hashed for the cache filename.
+Upgrade the extension as part of the Flarum 2 migration.
+Back up the database and forum files before upgrading.
 
-Valid cached images are reused and refreshed after seven days. If a refresh fails, an existing valid cached image remains available. Bundesliga.at player portraits are normalized to a square, top-biased crop before being stored so faces remain visible in circular lineup thumbnails.
+Version 0.2.0 retains the original extension ID, five historical
+migrations and existing provider-neutral database tables.
 
-Generated lineup images are separate from the provider image cache.
+- Existing lineup images and post references remain intact.
+- Historical API-Football data is retained.
+- API-Football is no longer an active provider.
+- Legacy API keys and provider data are not automatically deleted.
+- Synchronize teams and squads to populate the new image cache.
+
+See [Security and migration](SECURITY-AND-MIGRATION.md)
+for additional details.
 
 ## Security
 
-The API-Football key is stored in the Flarum settings table and is used only server-side. It is not returned to the administration frontend after it has been saved. Protect access to the database and database backups accordingly.
+- Server-side validation of permissions, teams and player selections
+- Per-user image generation rate limits
+- Restricted remote image sources and validated downloads
+- Locally re-encoded PNG assets
+- No automatic deletion of legacy lineup images
 
-Remote images are restricted to explicit provider-specific HTTPS hosts and paths before they are downloaded and decoded.
+Generated images and cached assets are publicly accessible.
+Their URLs must not be treated as private resources.
 
-Bundesliga.at HTML is fetched only from the fixed official base URL. Squad paths are validated before requests are made.
+Ensure that the intended use of third-party logos and player photos
+complies with applicable rights and attribution requirements.
 
-Generated images, team logos and player photos are stored in the forum's public asset directory. Their URLs must not be treated as private or protected resources.
+## Development and testing
 
-Do not commit API keys to the repository.
+The Flarum 2 port has passed 129 PHPUnit tests with 1,006 assertions
+under PHP 8.4, alongside local smoke and production upgrade tests.
 
-## Updating
-
-```sh
-composer update m4v3rick4git/flarum-lineup
-php flarum migrate
-php flarum cache:clear
-```
+See [Local development](INSTALL-LOCAL.md) for the isolated
+WSL/Docker development environment.
 
 ## Links
 
@@ -141,4 +150,4 @@ php flarum cache:clear
 
 ## License
 
-Released under the MIT License.
+MIT License.

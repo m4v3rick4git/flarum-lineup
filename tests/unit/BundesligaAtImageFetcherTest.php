@@ -7,6 +7,7 @@ namespace Wss\FlarumLineup\Tests\Unit;
 use GdImage;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Wss\FlarumLineup\Image\BundesligaAtImageFetcher;
 
@@ -140,9 +141,7 @@ final class BundesligaAtImageFetcherTest extends TestCase
         imagedestroy($image);
     }
 
-    /**
-     * @dataProvider invalidUrlProvider
-     */
+    #[DataProvider('invalidUrlProvider')]
     public function testItRejectsUnexpectedUrls(
         string $url
     ): void {

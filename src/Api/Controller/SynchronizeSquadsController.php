@@ -11,7 +11,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
-use Wss\FlarumLineup\Api\ApiFootballRequestException;
 use Wss\FlarumLineup\Model\Team;
 use Wss\FlarumLineup\Sync\SquadSynchronizer;
 use Wss\FlarumLineup\Sync\SyncAlreadyRunningException;
@@ -86,6 +85,7 @@ final class SynchronizeSquadsController implements RequestHandlerInterface
         $team = Team::query()
             ->where('id', $normalizedTeamId)
             ->where('is_active', true)
+            ->where('provider', \Wss\FlarumLineup\DataProvider\BundesligaAtProvider::PROVIDER_KEY)
             ->first();
 
         if (!$team instanceof Team) {
@@ -145,40 +145,6 @@ final class SynchronizeSquadsController implements RequestHandlerInterface
                 'exception' => $exception,
             ]
         );
-
-        if (
-            $exception instanceof ApiFootballRequestException
-            && $exception->statusCode() === 429
-        ) {
-            $retryAfter = $exception->retryAfterSeconds();
-
-            $headers = [
-                'Content-Type' => 'application/vnd.api+json',
-            ];
-
-            if ($retryAfter !== null) {
-                $headers['Retry-After'] = (string) $retryAfter;
-            }
-
-            return new JsonResponse(
-                [
-                    'errors' => [
-                        [
-                            'status' => '429',
-                            'code' => 'api_rate_limited',
-                            'detail' => (
-                                'API-Football rate limit reached.'
-                            ),
-                            'meta' => [
-                                'retryAfter' => $retryAfter,
-                            ],
-                        ],
-                    ],
-                ],
-                429,
-                $headers
-            );
-        }
 
         return new JsonResponse(
             [

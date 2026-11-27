@@ -65,7 +65,7 @@ final class RemoteImageCacheTest extends TestCase
         );
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/api-football/'
+            'assets/wss-lineup-2/cache/teams/api-football/'
             .self::TEAM_ID_HASH
             .'.png',
             $relativePath
@@ -109,7 +109,7 @@ final class RemoteImageCacheTest extends TestCase
         );
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/api-football/'
+            'assets/wss-lineup-2/cache/teams/api-football/'
             .self::TEAM_ID_HASH
             .'.png',
             $relativePath
@@ -155,7 +155,7 @@ final class RemoteImageCacheTest extends TestCase
         $cache = $this->cache($source);
 
         $this->assertSame(
-            'assets/wss-lineup/cache/players/api-football/'
+            'assets/wss-lineup-2/cache/players/api-football/'
             .self::PLAYER_ID_HASH
             .'.png',
             $cache->cachePlayerPhoto(
@@ -181,7 +181,7 @@ final class RemoteImageCacheTest extends TestCase
         $providerTeamId = 'SK-RBS';
 
         $this->assertSame(
-            'assets/wss-lineup/cache/teams/bundesliga-at/'
+            'assets/wss-lineup-2/cache/teams/bundesliga-at/'
             .hash('sha256', $providerTeamId)
             .'.png',
             $this->cache($source)->cacheTeamLogo(
@@ -195,7 +195,7 @@ final class RemoteImageCacheTest extends TestCase
     public function testItReusesAnExistingValidFile(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/teams/api-football/'
+            'assets/wss-lineup-2/cache/teams/api-football/'
             .self::TEAM_ID_HASH
             .'.png';
 
@@ -234,7 +234,7 @@ final class RemoteImageCacheTest extends TestCase
     public function testItRefreshesAStaleValidFile(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/teams/api-football/'
+            'assets/wss-lineup-2/cache/teams/api-football/'
             .self::TEAM_ID_HASH
             .'.png';
 
@@ -312,7 +312,7 @@ final class RemoteImageCacheTest extends TestCase
     public function testItKeepsAStaleFileWhenRefreshFails(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/players/api-football/'
+            'assets/wss-lineup-2/cache/players/api-football/'
             .self::PLAYER_ID_HASH
             .'.png';
 
@@ -392,6 +392,10 @@ final class RemoteImageCacheTest extends TestCase
             RemoteImageSource::class
         );
 
+        $source
+            ->expects($this->never())
+            ->method('fetch');
+
         $cache = $this->cache($source);
 
         $this->expectException(
@@ -409,7 +413,7 @@ final class RemoteImageCacheTest extends TestCase
     public function testForceRefreshBypassesFreshCache(): void
     {
         $relativePath =
-            'assets/wss-lineup/cache/players/api-football/'
+            'assets/wss-lineup-2/cache/players/api-football/'
             .self::PLAYER_ID_HASH
             .'.png';
 
@@ -746,7 +750,7 @@ final class RemoteImageCacheTest extends TestCase
         return new RemoteImageCache(
             $this->publicPath,
             $source,
-            $this->createMock(LoggerInterface::class)
+            $this->createStub(LoggerInterface::class)
         );
     }
 

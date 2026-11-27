@@ -104,7 +104,7 @@ final class GeneratedImageCleanupManager implements
                 $filename
             ) !== 1
             || $relativePath
-                !== 'assets/wss-lineup/'.$filename
+                !== 'assets/wss-lineup-2/'.$filename
         ) {
             ++$result['failed'];
 
@@ -130,14 +130,17 @@ final class GeneratedImageCleanupManager implements
             );
 
         try {
+            if (is_link(dirname($absolutePath))) {
+                throw new \RuntimeException('Symlinked output directory is forbidden.');
+            }
             if (
                 file_exists($absolutePath)
                 || is_link($absolutePath)
             ) {
-                if (
-                    !is_file($absolutePath)
-                    && !is_link($absolutePath)
-                ) {
+                if (is_link($absolutePath)) {
+                    throw new \RuntimeException('Symbolic links must not be deleted.');
+                }
+                if (!is_file($absolutePath)) {
                     throw new \RuntimeException(
                         'The generated image path is not a file.'
                     );
