@@ -1,5 +1,5 @@
-import app from 'flarum/admin/app';
-import Component from 'flarum/common/Component';
+import app from "flarum/admin/app";
+import Component from "flarum/common/Component";
 
 interface TeamSyncResult {
   success: boolean;
@@ -18,28 +18,48 @@ export default class TeamSyncSettings extends Component {
   view() {
     return (
       <div className="Form-group">
-        <label>{app.translator.trans('m4v3rick4git-lineup.admin.team_sync.title')}</label>
+        <label>
+          {app.translator.trans("m4v3rick4git-lineup.admin.team_sync.title")}
+        </label>
 
-        <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.team_sync.help')}</p>
+        <p className="helpText">
+          {app.translator.trans("m4v3rick4git-lineup.admin.team_sync.help")}
+        </p>
 
-        <button className="Button Button--primary" type="button" disabled={this.syncing} onclick={(): void => void this.synchronize()}>
+        <button
+          className="Button Button--primary"
+          type="button"
+          disabled={this.syncing}
+          onclick={(): void => void this.synchronize()}
+        >
           {app.translator.trans(
-            this.syncing ? 'm4v3rick4git-lineup.admin.team_sync.syncing_button' : 'm4v3rick4git-lineup.admin.team_sync.sync_button'
+            this.syncing
+              ? "m4v3rick4git-lineup.admin.team_sync.syncing_button"
+              : "m4v3rick4git-lineup.admin.team_sync.sync_button",
           )}
         </button>
 
         {this.result && (
           <p className="helpText">
-            {app.translator.trans('m4v3rick4git-lineup.admin.team_sync.success_message', {
-              received: this.result.received,
-              created: this.result.created,
-              updated: this.result.updated,
-              deactivated: this.result.deactivated,
-            })}
+            {app.translator.trans(
+              "m4v3rick4git-lineup.admin.team_sync.success_message",
+              {
+                received: this.result.received,
+                created: this.result.created,
+                updated: this.result.updated,
+                deactivated: this.result.deactivated,
+              },
+            )}
           </p>
         )}
 
-        {this.failed && <p className="helpText">{app.translator.trans('m4v3rick4git-lineup.admin.team_sync.error_message')}</p>}
+        {this.failed && (
+          <p className="helpText">
+            {app.translator.trans(
+              "m4v3rick4git-lineup.admin.team_sync.error_message",
+            )}
+          </p>
+        )}
       </div>
     );
   }
@@ -55,8 +75,8 @@ export default class TeamSyncSettings extends Component {
 
     try {
       this.result = await app.request<TeamSyncResult>({
-        method: 'POST',
-        url: `${app.forum.attribute('apiUrl')}/wss-lineup/teams/sync`,
+        method: "POST",
+        url: `${app.forum.attribute("apiUrl")}/wss-lineup/teams/sync`,
         body: {},
       });
     } catch {

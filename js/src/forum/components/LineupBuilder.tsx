@@ -1,9 +1,9 @@
-import app from 'flarum/forum/app';
-import Button from 'flarum/common/components/Button';
-import Component from 'flarum/common/Component';
-import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
-import LineupPitch, { type FormationKey } from './LineupPitch';
-import type Mithril from 'mithril';
+import app from "flarum/forum/app";
+import Button from "flarum/common/components/Button";
+import Component from "flarum/common/Component";
+import LoadingIndicator from "flarum/common/components/LoadingIndicator";
+import LineupPitch, { type FormationKey } from "./LineupPitch";
+import type Mithril from "mithril";
 
 export interface Team {
   id: number;
@@ -52,7 +52,7 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
   private players: Player[] = [];
 
   private selectedPlayerIds: number[] = [];
-  private formation: FormationKey = '4-2-3-1';
+  private formation: FormationKey = "4-2-3-1";
   private selectedPitchSlotIndex: number | null = null;
 
   private generating = false;
@@ -69,22 +69,39 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
       <div className="LineupBuilder">
         {this.loadingTeams && LoadingIndicator.component()}
 
-        {!this.loadingTeams && this.teamsFailed && <div className="Alert">{app.translator.trans('m4v3rick4git-lineup.forum.lineup.load_error')}</div>}
+        {!this.loadingTeams && this.teamsFailed && (
+          <div className="Alert">
+            {app.translator.trans(
+              "m4v3rick4git-lineup.forum.lineup.load_error",
+            )}
+          </div>
+        )}
 
         {!this.loadingTeams && !this.teamsFailed && this.teams.length === 0 && (
-          <div className="Alert">{app.translator.trans('m4v3rick4git-lineup.forum.lineup.no_teams')}</div>
+          <div className="Alert">
+            {app.translator.trans("m4v3rick4git-lineup.forum.lineup.no_teams")}
+          </div>
         )}
 
         {!this.loadingTeams && !this.teamsFailed && this.teams.length > 0 && (
           <div className="LineupTeamGrid">
             {this.teams.map((team) => (
               <button
-                className={['LineupTeamCard', this.selectedTeam?.id === team.id ? 'is-selected' : ''].join(' ')}
+                className={[
+                  "LineupTeamCard",
+                  this.selectedTeam?.id === team.id ? "is-selected" : "",
+                ].join(" ")}
                 type="button"
                 key={team.id}
                 onclick={(): void => void this.selectTeam(team)}
               >
-                {team.logoUrl && <img className="LineupTeamCard-logo" src={team.logoUrl} alt="" />}
+                {team.logoUrl && (
+                  <img
+                    className="LineupTeamCard-logo"
+                    src={team.logoUrl}
+                    alt=""
+                  />
+                )}
 
                 <strong>{team.name}</strong>
 
@@ -100,60 +117,92 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
               <div>
                 <h3>{this.selectedTeam.name}</h3>
 
-                <p>{app.translator.trans('m4v3rick4git-lineup.forum.lineup.squad_description')}</p>
+                <p>
+                  {app.translator.trans(
+                    "m4v3rick4git-lineup.forum.lineup.squad_description",
+                  )}
+                </p>
               </div>
 
               <strong className="LineupSquad-counter">
-                {app.translator.trans('m4v3rick4git-lineup.forum.lineup.selection_count', {
-                  selected: this.selectedPlayerIds.length,
-                  maximum: 11,
-                })}
+                {app.translator.trans(
+                  "m4v3rick4git-lineup.forum.lineup.selection_count",
+                  {
+                    selected: this.selectedPlayerIds.length,
+                    maximum: 11,
+                  },
+                )}
               </strong>
             </header>
 
             {this.loadingPlayers && LoadingIndicator.component()}
 
             {!this.loadingPlayers && this.playersFailed && (
-              <div className="Alert">{app.translator.trans('m4v3rick4git-lineup.forum.lineup.players_error')}</div>
-            )}
-
-            {!this.loadingPlayers && !this.playersFailed && this.players.length === 0 && (
-              <div className="Alert">{app.translator.trans('m4v3rick4git-lineup.forum.lineup.no_players')}</div>
-            )}
-
-            {!this.loadingPlayers && !this.playersFailed && this.players.length > 0 && (
-              <div className="LineupPlayerList">
-                {this.players.map((player) => {
-                  const selected = this.isPlayerSelected(player.id);
-
-                  const selectionFull = this.selectedPlayerIds.length >= 11;
-
-                  return (
-                    <button
-                      className={['LineupPlayer', selected ? 'is-selected' : ''].join(' ')}
-                      type="button"
-                      key={player.id}
-                      disabled={selectionFull && !selected}
-                      onclick={() => this.togglePlayer(player.id)}
-                    >
-                      {player.photoUrl && <img className="LineupPlayer-photo" src={player.photoUrl} alt="" />}
-
-                      <div className="LineupPlayer-info">
-                        <strong>{player.name}</strong>
-
-                        <span>
-                          {player.position ?? '–'}
-                          {' · '}
-                          {player.shirtNumber !== null ? `#${player.shirtNumber}` : '#–'}
-                        </span>
-                      </div>
-
-                      {selected && <span className="LineupPlayer-check">✓</span>}
-                    </button>
-                  );
-                })}
+              <div className="Alert">
+                {app.translator.trans(
+                  "m4v3rick4git-lineup.forum.lineup.players_error",
+                )}
               </div>
             )}
+
+            {!this.loadingPlayers &&
+              !this.playersFailed &&
+              this.players.length === 0 && (
+                <div className="Alert">
+                  {app.translator.trans(
+                    "m4v3rick4git-lineup.forum.lineup.no_players",
+                  )}
+                </div>
+              )}
+
+            {!this.loadingPlayers &&
+              !this.playersFailed &&
+              this.players.length > 0 && (
+                <div className="LineupPlayerList">
+                  {this.players.map((player) => {
+                    const selected = this.isPlayerSelected(player.id);
+
+                    const selectionFull = this.selectedPlayerIds.length >= 11;
+
+                    return (
+                      <button
+                        className={[
+                          "LineupPlayer",
+                          selected ? "is-selected" : "",
+                        ].join(" ")}
+                        type="button"
+                        key={player.id}
+                        disabled={selectionFull && !selected}
+                        onclick={() => this.togglePlayer(player.id)}
+                      >
+                        {player.photoUrl && (
+                          <img
+                            className="LineupPlayer-photo"
+                            src={player.photoUrl}
+                            alt=""
+                          />
+                        )}
+
+                        <div className="LineupPlayer-info">
+                          <strong>{player.name}</strong>
+
+                          <span>
+                            {player.position ?? "–"}
+                            {" · "}
+                            {player.shirtNumber !== null
+                              ? `#${player.shirtNumber}`
+                              : "#–"}
+                          </span>
+                        </div>
+
+                        {selected && (
+                          <span className="LineupPlayer-check">✓</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
             {this.selectedPlayerIds.length === 11 && (
               <div className="LineupBuilder-preview">
@@ -162,11 +211,19 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
                   players: this.getSelectedPlayers(),
                   formation: this.formation,
                   selectedSlotIndex: this.selectedPitchSlotIndex,
-                  onFormationChange: (formation: FormationKey) => this.changeFormation(formation),
-                  onSelectSlot: (slotIndex: number) => this.selectPitchSlot(slotIndex),
+                  onFormationChange: (formation: FormationKey) =>
+                    this.changeFormation(formation),
+                  onSelectSlot: (slotIndex: number) =>
+                    this.selectPitchSlot(slotIndex),
                 })}
 
-                {this.generationFailed && <div className="Alert">{app.translator.trans('m4v3rick4git-lineup.forum.lineup.generation_error')}</div>}
+                {this.generationFailed && (
+                  <div className="Alert">
+                    {app.translator.trans(
+                      "m4v3rick4git-lineup.forum.lineup.generation_error",
+                    )}
+                  </div>
+                )}
 
                 <div className="LineupBuilder-actions">
                   <Button
@@ -178,8 +235,12 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
                     onclick={(): void => void this.generateImage()}
                   >
                     {this.generating
-                      ? app.translator.trans('m4v3rick4git-lineup.forum.lineup.generating_button')
-                      : app.translator.trans('m4v3rick4git-lineup.forum.lineup.generate_button')}
+                      ? app.translator.trans(
+                          "m4v3rick4git-lineup.forum.lineup.generating_button",
+                        )
+                      : app.translator.trans(
+                          "m4v3rick4git-lineup.forum.lineup.generate_button",
+                        )}
                   </Button>
                 </div>
               </div>
@@ -193,8 +254,8 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
   private async loadTeams(): Promise<void> {
     try {
       const response = await app.request<TeamsResponse>({
-        method: 'GET',
-        url: `${app.forum.attribute('apiUrl')}` + '/wss-lineup/teams',
+        method: "GET",
+        url: `${app.forum.attribute("apiUrl")}` + "/wss-lineup/teams",
       });
 
       this.teams = response.teams;
@@ -217,8 +278,10 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
 
     try {
       const response = await app.request<PlayersResponse>({
-        method: 'GET',
-        url: `${app.forum.attribute('apiUrl')}` + `/wss-lineup/players?teamId=${team.id}`,
+        method: "GET",
+        url:
+          `${app.forum.attribute("apiUrl")}` +
+          `/wss-lineup/players?teamId=${team.id}`,
       });
 
       this.selectedTeam = response.team;
@@ -239,18 +302,18 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
 
   private scrollToSquadHeader(): void {
     window.requestAnimationFrame(() => {
-      document.getElementById('wss-lineup-squad-header')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
+      document.getElementById("wss-lineup-squad-header")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     });
   }
 
   private scrollToSquad(): void {
     window.requestAnimationFrame(() => {
-      document.getElementById('wss-lineup-squad')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
+      document.getElementById("wss-lineup-squad")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     });
   }
@@ -264,7 +327,9 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
     this.generationFailed = false;
 
     if (this.isPlayerSelected(playerId)) {
-      this.selectedPlayerIds = this.selectedPlayerIds.filter((selectedPlayerId) => selectedPlayerId !== playerId);
+      this.selectedPlayerIds = this.selectedPlayerIds.filter(
+        (selectedPlayerId) => selectedPlayerId !== playerId,
+      );
 
       return;
     }
@@ -316,7 +381,11 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
   }
 
   private async generateImage(): Promise<void> {
-    if (!this.selectedTeam || this.selectedPlayerIds.length !== 11 || this.generating) {
+    if (
+      !this.selectedTeam ||
+      this.selectedPlayerIds.length !== 11 ||
+      this.generating
+    ) {
       return;
     }
 
@@ -325,8 +394,8 @@ export default class LineupBuilder extends Component<LineupBuilderAttrs> {
 
     try {
       const response = await app.request<CreateLineupImageResponse>({
-        method: 'POST',
-        url: `${app.forum.attribute('apiUrl')}` + '/wss-lineup/images',
+        method: "POST",
+        url: `${app.forum.attribute("apiUrl")}` + "/wss-lineup/images",
         body: {
           teamId: this.selectedTeam.id,
           formation: this.formation,

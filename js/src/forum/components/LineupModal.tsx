@@ -1,7 +1,9 @@
-import app from 'flarum/forum/app';
-import Modal, { type IInternalModalAttrs } from 'flarum/common/components/Modal';
-import LineupBuilder from './LineupBuilder';
-import type Mithril from 'mithril';
+import app from "flarum/forum/app";
+import Modal, {
+  type IInternalModalAttrs,
+} from "flarum/common/components/Modal";
+import LineupBuilder from "./LineupBuilder";
+import type Mithril from "mithril";
 
 export interface LineupModalAttrs extends IInternalModalAttrs {
   onImageCreated: (imageUrl: string) => void | Promise<void>;
@@ -9,11 +11,13 @@ export interface LineupModalAttrs extends IInternalModalAttrs {
 
 export default class LineupModal extends Modal<LineupModalAttrs> {
   className(): string {
-    return 'LineupModal';
+    return "LineupModal";
   }
 
   title(): Mithril.Children {
-    return app.translator.trans('m4v3rick4git-lineup.forum.composer_modal.title');
+    return app.translator.trans(
+      "m4v3rick4git-lineup.forum.composer_modal.title",
+    );
   }
 
   content(): Mithril.Children {

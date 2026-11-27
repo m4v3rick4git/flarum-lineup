@@ -1,4 +1,4 @@
-import type Mithril from 'mithril';
+import type Mithril from "mithril";
 
 declare global {
   const m: typeof Mithril;

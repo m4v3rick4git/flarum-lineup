@@ -11,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "flarum/*": [
-        "../../../../app/vendor/flarum/core/js/dist-typings/*"
+        "../../../../app/vendor/flarum/core/js/dist-typings/*",
+        "../vendor/flarum/core/js/dist-typings/*"
       ]
     }
   }
